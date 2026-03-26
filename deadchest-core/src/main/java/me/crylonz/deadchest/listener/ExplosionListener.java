@@ -5,6 +5,7 @@ import me.crylonz.deadchest.DeadChestLoader;
 import me.crylonz.deadchest.db.InMemoryChestStore;
 import me.crylonz.deadchest.utils.ConfigKey;
 import org.bukkit.block.Block;
+import org.bukkit.entity.WindCharge;
 import org.bukkit.event.Event;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -23,6 +24,9 @@ public class ExplosionListener implements Listener {
 
     @EventHandler
     public void onEntityExplodeEvent(EntityExplodeEvent e) {
+        if (DeadChestLoader.hasWindCharge && e.getEntity() instanceof WindCharge) {
+            return;
+        }
         chestExplosionHandler(e);
     }
 

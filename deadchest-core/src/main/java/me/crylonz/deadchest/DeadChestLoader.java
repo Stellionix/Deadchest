@@ -45,6 +45,7 @@ public class DeadChestLoader {
 
     public static boolean bstats = true;
     public static boolean isChangesNeedToBeSave = false;
+    public static boolean hasWindCharge;
 
     public static DeadChestConfig config;
 
@@ -110,6 +111,7 @@ public class DeadChestLoader {
         Objects.requireNonNull(javaPlugin.getCommand("dc")).setTabCompleter(new DCTabCompletion());
 
         launchRepeatingTask();
+        checkIfHasWindCharge();
     }
 
 
@@ -320,4 +322,12 @@ public class DeadChestLoader {
         return config;
     }
 
+    private void checkIfHasWindCharge(){
+        try {
+            Class.forName("org.bukkit.entity.WindCharge");
+            hasWindCharge = true;
+        } catch (ClassNotFoundException e) {
+            hasWindCharge = false;
+        }
+    }
 }
