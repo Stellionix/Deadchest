@@ -6,7 +6,11 @@ import me.crylonz.deadchest.Permission;
 import me.crylonz.deadchest.utils.ConfigKey;
 import me.crylonz.deadchest.utils.IgnoreItemRules;
 import me.crylonz.deadchest.utils.Utils;
-import org.bukkit.*;
+import org.bukkit.GameMode;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.Tag;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.ArmorStand;
@@ -18,6 +22,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.inventory.meta.ArmorMeta;
 import org.bukkit.inventory.meta.Damageable;
 
 import java.util.Arrays;
@@ -328,6 +333,7 @@ public class PlayerDeathListener implements Listener {
         Arrays.stream(inv.getContents())
                 .filter(Objects::nonNull)
                 .filter(itemStack -> itemStack.getItemMeta() instanceof Damageable)
+                .filter(this::isUsingDamage)
                 .forEach(itemStack -> {
                     Damageable itemData = (Damageable) itemStack.getItemMeta();
                     int loss = (int) (itemStack.getType().getMaxDurability() * lossPct / 100.0);
@@ -340,6 +346,20 @@ public class PlayerDeathListener implements Listener {
                         itemStack.setItemMeta(itemData);
                     }
                 });
+    }
+
+    private boolean isUsingDamage(ItemStack itemStack) {
+        Material type = itemStack.getType();
+        if(Tag.ITEMS_TOOLS.isTagged(type) ){
+            return true;
+        }
+        if(Tag.ITEMS_SWORDS.isTagged(type)){
+            return true;
+        }
+        if(Tag.ITEMS_AXES.isTagged(type)){
+            return true;
+        }
+        return itemStack.getItemMeta() instanceof ArmorMeta;
     }
 
     private ItemStack[] prepareItemsToStore(ItemStack[] playerInv) {
