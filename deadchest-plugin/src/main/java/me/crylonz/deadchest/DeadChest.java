@@ -49,6 +49,7 @@ public class DeadChest extends JavaPlugin {
         pm.registerEvents(new InventoryClickListener(), this);
         pm.registerEvents(new PistonListener(), this);
         pm.registerEvents(new PlayerDeathListener(), this);
+        pm.registerEvents(new PendingGivebackJoinListener(), this);
 
     }
 

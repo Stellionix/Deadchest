@@ -118,4 +118,45 @@ class DCTabCompletionTest {
         assertEquals(List.of("filters.ignored-items"), suggestions);
         assertFalse(suggestions.contains("localization.language"));
     }
+
+    @Test
+    void giveBackSuggestionsExposeSelectorsAndPlayers() {
+        PlayerMock admin = server.addPlayer("Admin");
+        admin.addAttachment(MockBukkit.createMockPlugin(), Permission.GIVEBACK.label, true);
+        server.addPlayer("Steve");
+
+        List<String> suggestions = tabCompletion.onTabComplete(admin, dcCommand, "dc", new String[]{"giveback", ""});
+
+        assertTrue(suggestions.contains("list"));
+        assertTrue(suggestions.contains("latest"));
+        assertTrue(suggestions.contains("oldest"));
+        assertTrue(suggestions.contains("all"));
+        assertTrue(suggestions.contains("id"));
+        assertTrue(suggestions.contains("Steve"));
+    }
+
+    @Test
+    void giveBackTargetSelectorsAreSuggestedAfterPlayerName() {
+        PlayerMock admin = server.addPlayer("Admin");
+        admin.addAttachment(MockBukkit.createMockPlugin(), Permission.GIVEBACK.label, true);
+
+        List<String> suggestions = tabCompletion.onTabComplete(admin, dcCommand, "dc", new String[]{"giveback", "Steve", ""});
+
+        assertTrue(suggestions.contains("latest"));
+        assertTrue(suggestions.contains("oldest"));
+        assertTrue(suggestions.contains("all"));
+        assertTrue(suggestions.contains("id"));
+    }
+
+    @Test
+    void giveBackPreviewSuggestionsExposePlayersAndSelectors() {
+        PlayerMock admin = server.addPlayer("Admin");
+        admin.addAttachment(MockBukkit.createMockPlugin(), Permission.GIVEBACK.label, true);
+        server.addPlayer("Steve");
+
+        List<String> suggestions = tabCompletion.onTabComplete(admin, dcCommand, "dc", new String[]{"giveback", "preview", ""});
+
+        assertTrue(suggestions.contains("list"));
+        assertTrue(suggestions.contains("Steve"));
+    }
 }

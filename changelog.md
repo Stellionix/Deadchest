@@ -1,3 +1,25 @@
+## Deadchest 4.30.0 - 2026-04-10
+
+- Reworked `/dc giveback` with deterministic selectors:
+  - `/dc giveback <player>` now gives back the latest active DeadChest
+  - `/dc giveback <player> latest`
+  - `/dc giveback <player> oldest`
+  - `/dc giveback <player> all`
+  - `/dc giveback <player> id <n>`
+- Added `/dc giveback list <player>` to display selectable DeadChest ids for a player
+- Added `/dc giveback preview ...` commands to preview giveback actions without modifying chests or player inventories
+- Added giveback delivery strategies:
+  - `inventory` restores items to the player's inventory and drops overflow
+  - `ground` drops items at the target player's location
+- Added offline giveback queue persisted in SQLite, delivered automatically when the player joins
+- Improved giveback tab-completion for selectors, strategies, preview, list, ids, and online player names
+- Fixed `/dc giveback` command matching so specific commands such as `list`, `latest`, and `oldest` are not executed again by generic command patterns
+- Fixed giveback feedback messages so they no longer mention the oldest DeadChest when using `latest`, `all`, or `id`
+- Updated all bundled localization JSON files for the new giveback feedback messages
+- Corrected the giveback permission declaration from `deadchest.giveBack` to `deadchest.giveback`
+- Refactored `/dc` command registration into dedicated command classes for reload, repair, remove, list, giveback, config, and ignore commands
+- Updated README, plugin usage text, and commands/permissions documentation
+
 ## Deadchest 4.29.0 - 2026-03-26
 
 - Added `/dc config` commands to read and update `config.yml` directly in game:

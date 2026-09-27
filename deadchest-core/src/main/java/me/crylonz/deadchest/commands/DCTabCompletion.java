@@ -46,7 +46,7 @@ public class DCTabCompletion implements TabCompleter {
             }
 
             if (player != null && PermissionUtils.hasAdminOr(player, Permission.GIVEBACK)) {
-                list.add("giveBack");
+                list.add("giveback");
             }
 
             if (player != null && PermissionUtils.hasAdminOrOneOf(player, PermissionUtils.REMOVE_ALL)) {
@@ -67,12 +67,91 @@ public class DCTabCompletion implements TabCompleter {
                 addOnlinePlayers();
             }
             if ("giveback".equalsIgnoreCase(args[0]) && player != null && PermissionUtils.hasAdminOr(player, Permission.GIVEBACK)) {
+                list.add("list");
+                list.add("preview");
+                list.add("latest");
+                list.add("oldest");
+                list.add("all");
+                list.add("id");
                 addOnlinePlayers();
             }
             if ("config".equalsIgnoreCase(args[0]) && configAccess) {
                 list.addAll(DCConfigCommandSupport.actions());
             }
             return filterSuggestions(args[1]);
+        }
+
+        if ("giveback".equalsIgnoreCase(args[0]) && player != null && PermissionUtils.hasAdminOr(player, Permission.GIVEBACK)) {
+            if (args.length == 3) {
+                if ("preview".equalsIgnoreCase(args[1])) {
+                    list.add("list");
+                    addOnlinePlayers();
+                    return filterSuggestions(args[2]);
+                }
+                if ("list".equalsIgnoreCase(args[1])) {
+                    addOnlinePlayers();
+                } else {
+                    list.add("latest");
+                    list.add("oldest");
+                    list.add("all");
+                    list.add("id");
+                    list.add("inventory");
+                    list.add("ground");
+                }
+                return filterSuggestions(args[2]);
+            }
+
+            if (args.length == 4 && "preview".equalsIgnoreCase(args[1])) {
+                if ("list".equalsIgnoreCase(args[2])) {
+                    addOnlinePlayers();
+                } else {
+                    list.add("latest");
+                    list.add("oldest");
+                    list.add("all");
+                    list.add("id");
+                    list.add("inventory");
+                    list.add("ground");
+                }
+                return filterSuggestions(args[3]);
+            }
+
+            if (args.length == 5 && "preview".equalsIgnoreCase(args[1]) && "id".equalsIgnoreCase(args[3])) {
+                list.add("1");
+                list.add("2");
+                list.add("3");
+                return filterSuggestions(args[4]);
+            }
+
+            if (args.length == 5 && "preview".equalsIgnoreCase(args[1]) && !"id".equalsIgnoreCase(args[3])) {
+                list.add("inventory");
+                list.add("ground");
+                return filterSuggestions(args[4]);
+            }
+
+            if (args.length == 6 && "preview".equalsIgnoreCase(args[1]) && "id".equalsIgnoreCase(args[3])) {
+                list.add("inventory");
+                list.add("ground");
+                return filterSuggestions(args[5]);
+            }
+
+            if (args.length == 4 && "id".equalsIgnoreCase(args[2])) {
+                list.add("1");
+                list.add("2");
+                list.add("3");
+                return filterSuggestions(args[3]);
+            }
+
+            if (args.length == 4 && !"id".equalsIgnoreCase(args[2])) {
+                list.add("inventory");
+                list.add("ground");
+                return filterSuggestions(args[3]);
+            }
+
+            if (args.length == 5 && "id".equalsIgnoreCase(args[2])) {
+                list.add("inventory");
+                list.add("ground");
+                return filterSuggestions(args[4]);
+            }
         }
 
         if (!"config".equalsIgnoreCase(args[0]) || !configAccess) {

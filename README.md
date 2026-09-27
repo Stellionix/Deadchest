@@ -75,6 +75,10 @@ Common examples:
 - `/dc list`
 - `/dc remove`
 - `/dc giveback <player>`
+- `/dc giveback list <player>`
+- `/dc giveback preview <player>`
+- `/dc giveback <player> oldest`
+- `/dc giveback <player> all inventory`
 
 The full command list and permission nodes are
 documented [here](https://stellionix.github.io/Deadchest/latest/commands-and-perms/).

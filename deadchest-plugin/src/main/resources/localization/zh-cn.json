@@ -43,6 +43,8 @@
   "commands.config.error.invalid-value": "§cInvalid value for {0}: {1}. Expected {2}.",
   "commands.config.deprecated.ignore": "§e'/dc ignore' is deprecated. Use /dc config edit filters.ignored-items.",
   "commands.giveback.target-not-found": "§c该玩家离线或没有活动的死亡箱",
-  "commands.giveback.success.sender": "§a已返还该玩家最旧死亡箱中的内容",
-  "commands.giveback.success.target": "§a你已取回死亡箱中的物品"
+  "commands.giveback.success.sender": "§a已将 {0} 个死亡箱返还给 {1}，方式：{2}",
+  "commands.giveback.success.target": "§a你已通过 {1} 取回 {0} 个死亡箱",
+  "commands.giveback.success.sender.detailed": "§a已将 {0} 个死亡箱返还给 {1}，方式：{2}",
+  "commands.giveback.success.target.detailed": "§a你已通过 {1} 取回 {0} 个死亡箱"
 }

@@ -65,7 +65,9 @@ class DCCommandRegistrationTest {
         registration.registerCommand("dc remove {0}", "deadchest.remove.other", () -> {
         });
 
-        assertTrue(registration.isCommandSucceed(), "Bad argument path is handled as recognized command");
+        assertFalse(registration.isCommandSucceed());
+        assertTrue(registration.hasBadArguments());
+        registration.sendBadArgumentsFeedback();
         verify(sender, times(1)).sendMessage(contains("Bad argument(s) for /dc remove"));
     }
 
@@ -78,6 +80,7 @@ class DCCommandRegistrationTest {
         });
 
         assertFalse(registration.isCommandSucceed());
+        assertFalse(registration.hasBadArguments());
         verify(sender, never()).sendMessage(contains("Bad argument(s) for /dc config"));
     }
 

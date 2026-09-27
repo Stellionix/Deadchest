@@ -40,9 +40,16 @@ public class DCCommandExecutor implements CommandExecutor {
         commandRegistration.registerConfigEdit();       // dc config edit <path>
         commandRegistration.registerIgnoreList();       // dc ignore
 
-        if (!commandRegistration.isCommandSucceed()) {
-            sender.sendMessage(local.prefixed("commands.error.unknown"));
+        if (commandRegistration.isCommandSucceed()) {
+            return true;
         }
-        return commandRegistration.isCommandSucceed();
+
+        if (commandRegistration.hasBadArguments()) {
+            commandRegistration.sendBadArgumentsFeedback();
+            return true;
+        }
+
+        sender.sendMessage(local.prefixed("commands.error.unknown"));
+        return false;
     }
 }

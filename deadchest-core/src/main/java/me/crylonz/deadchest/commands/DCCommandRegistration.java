@@ -15,6 +15,8 @@ abstract class DCCommandRegistration {
 
     protected Player player = null;
     protected boolean commandSucceed = false;
+    private boolean badArgumentsMatched = false;
+    private String badArgumentsCommandName = null;
 
     public DCCommandRegistration(DeadChestLoader plugin) {
         this.plugin = plugin;
@@ -30,10 +32,10 @@ abstract class DCCommandRegistration {
         this.sender = sender;
         this.args = args;
         this.commandSucceed = false;
+        this.badArgumentsMatched = false;
+        this.badArgumentsCommandName = null;
 
-        if (sender instanceof Player) {
-            player = (Player) sender;
-        }
+        player = sender instanceof Player ? (Player) sender : null;
     }
 
     /**
@@ -83,9 +85,9 @@ abstract class DCCommandRegistration {
         }
 
         if (args.length < expectedArgCount) {
-            if (!commandSucceed) {
-                sender.sendMessage(local.prefixed("commands.error.bad-args", args[0]));
-                return true;
+            if (!badArgumentsMatched) {
+                badArgumentsMatched = true;
+                badArgumentsCommandName = args[0];
             }
             return false;
         }
@@ -107,6 +109,17 @@ abstract class DCCommandRegistration {
     }
 
     public void registerCommand(String command, String permission, Runnable commandRunnable) {
+        if (commandSucceed) {
+            return;
+        }
         setCommandSucceed(checkCommand(command, permission, commandRunnable));
+    }
+
+    public boolean hasBadArguments() {
+        return badArgumentsMatched;
+    }
+
+    public void sendBadArgumentsFeedback() {
+        sender.sendMessage(local.prefixed("commands.error.bad-args", badArgumentsCommandName));
     }
 }

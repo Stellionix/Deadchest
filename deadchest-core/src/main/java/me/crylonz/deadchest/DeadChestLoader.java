@@ -74,6 +74,7 @@ public class DeadChestLoader {
         ignoreList = Bukkit.createInventory(new IgnoreInventoryHolder(), 36, local.get("gui.ignore-list.title"));
         config = new DeadChestConfig(plugin);
         fileManager = new FileManager(plugin);
+        PendingGivebackRepository.initialize(plugin);
 
         ChestDataRepository.initTable(/* migrate old chestData.yml config */ OldChestData::migrateOldChestData);
 

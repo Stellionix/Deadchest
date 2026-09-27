@@ -43,7 +43,19 @@
   "commands.config.error.unknown-key": "§cUnknown config key: {0}",
   "commands.config.error.invalid-value": "§cInvalid value for {0}: {1}. Expected {2}.",
   "commands.config.deprecated.ignore": "§e'/dc ignore' is deprecated. Use /dc config edit filters.ignored-items.",
+  "commands.giveback.none": "§cNo active deadchest found for {0}",
+  "commands.giveback.invalid-id": "§cUnknown deadchest id: {0}",
+  "commands.giveback.invalid-strategy": "§cUnknown giveback strategy: {0}. Expected inventory or ground.",
+  "commands.giveback.list.title": "§aDeadchests for {0} ({1}):",
+  "commands.giveback.preview.list.title": "§aGiveback preview list for {0} ({1}):",
+  "commands.giveback.list.entry": "-§b ID: §f{0} | §bDate: §f{1} | §bWorld: §f{2} | §bX: §f{3} §bY: §f{4} §bZ: §f{5} | §bItems: §f{6} | §bXP: §f{7}",
+  "commands.giveback.preview.summary": "§aGiveback preview for §f{0}§a | selector=§f{1}§a | strategy=§f{2}§a | target=§f{3}§a | effect=§f{4}§a | chests=§f{5}§a | items=§f{6}§a | xp=§f{7}",
+  "commands.giveback.preview.entry": "-§b ID: §f{0} | §bDate: §f{1} | §bWorld: §f{2} | §bX: §f{3} §bY: §f{4} §bZ: §f{5} | §bItems: §f{6} | §bXP: §f{7}",
   "commands.giveback.target-not-found": "§cThis player is offline or doesn't have any active deadchest",
-  "commands.giveback.success.sender": "§aThe oldest deadchest content of this player was returned to them",
-  "commands.giveback.success.target": "§aYou have retrieved the content of your deadchest"
+  "commands.giveback.success.sender": "§aReturned {0} deadchest(s) to {1} using {2}",
+  "commands.giveback.success.target": "§aYou have retrieved {0} deadchest(s) using {1}",
+  "commands.giveback.success.sender.detailed": "§aReturned {0} deadchest(s) to {1} using {2}",
+  "commands.giveback.success.target.detailed": "§aYou have retrieved {0} deadchest(s) using {1}",
+  "commands.giveback.queued.sender": "§aQueued {0} deadchest(s) for {1} using {2}",
+  "commands.giveback.pending-delivered": "§aYou have received {0} queued deadchest(s)"
 }

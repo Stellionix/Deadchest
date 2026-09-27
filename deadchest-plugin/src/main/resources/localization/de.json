@@ -43,6 +43,8 @@
   "commands.config.error.invalid-value": "§cInvalid value for {0}: {1}. Expected {2}.",
   "commands.config.deprecated.ignore": "§e'/dc ignore' is deprecated. Use /dc config edit filters.ignored-items.",
   "commands.giveback.target-not-found": "§cDieser Spieler ist offline oder hat kein aktives deadchest",
-  "commands.giveback.success.sender": "§aDer Inhalt des ältesten deadchests dieses Spielers wurde zurückgegeben",
-  "commands.giveback.success.target": "§aDu hast den Inhalt deines deadchests zurückerhalten"
+  "commands.giveback.success.sender": "§a{0} deadchest(s) an {1} mit {2} zurückgegeben",
+  "commands.giveback.success.target": "§aDu hast {0} deadchest(s) mit {1} zurückerhalten",
+  "commands.giveback.success.sender.detailed": "§a{0} deadchest(s) an {1} mit {2} zurückgegeben",
+  "commands.giveback.success.target.detailed": "§aDu hast {0} deadchest(s) mit {1} zurückerhalten"
 }

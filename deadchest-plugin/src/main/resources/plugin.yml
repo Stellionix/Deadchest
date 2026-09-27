@@ -22,7 +22,7 @@ permissions:
   deadchest.infinityChest:
     description: Player dead chest never disappear
     default: false
-  deadchest.giveBack:
+  deadchest.giveback:
     description: Allow a player to give back a deadchest to a player
     default: op
   deadchest.admin:
@@ -42,5 +42,5 @@ permissions:
     default: op
 commands:
   dc:
-    usage: /dc reload | repair | remove [PlayerName] | removeinfinite | removeall | list [PlayerName] | list all | config <get|set|reset|edit>
+    usage: /dc reload | repair [force] | remove [PlayerName] | removeinfinite | removeall | list [PlayerName|all] | giveback <player> [latest|oldest|all|id <n>] [inventory|ground] | giveback list <player> | giveback preview <player|list <player>> ... | config <get|set|reset|edit> | ignore
     description: List of commands
