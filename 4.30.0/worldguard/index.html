@@ -21,7 +21,7 @@
       
       
       <link rel="icon" href="../assets/images/deadchest-logo-small.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
     
     
       
@@ -29,7 +29,7 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -1043,20 +1043,22 @@
 </tr>
 <tr>
 <td><code>dc-guest</code></td>
-<td>Any player can generate DeadChest in the region.</td>
+<td>Players who are neither owners nor members.</td>
 </tr>
 </tbody>
 </table>
 <h3 id="how-flags-are-evaluated">How flags are evaluated</h3>
-<p>At death location, DeadChest checks regions and applies logic in this order:</p>
-<ol>
-<li>If <code>dc-owner=allow</code> and player is owner -&gt; allow.</li>
-<li>If <code>dc-member=allow</code> and player is member -&gt; allow.</li>
-<li>If owner/member flags explicitly deny -&gt; deny.</li>
-<li>If <code>dc-guest=allow</code> -&gt; allow.</li>
-<li>If <code>dc-guest=deny</code> -&gt; deny.</li>
-<li>Otherwise fallback to <code>integrations.worldguard.default-allow</code>.</li>
-</ol>
+<p>At the death location, each region uses the flag matching the player's role:
+<code>dc-owner</code> for owners, <code>dc-member</code> for other members, and <code>dc-guest</code> for everyone
+else. An owner uses only <code>dc-owner</code>, even if also listed as a member.
+Membership includes WorldGuard permission groups and inherited membership.</p>
+<p>WorldGuard resolves parent flags and region-group restrictions. Among applicable
+decisions, higher-priority regions take precedence. At equal priority, a child
+can override its parent; conflicting unrelated regions resolve to <code>deny</code>.
+The global region supplies a fallback below local regions.</p>
+<p>If no applicable flag is defined, DeadChest uses
+<code>integrations.worldguard.default-allow</code>. Flags for other roles do not affect
+the player.</p>
 <h3 id="example-commands-worldguard">Example commands (WorldGuard)</h3>
 <p>Command syntax may vary slightly by WorldGuard version, but typically:</p>
 <pre><code class="language-text">/rg flag &lt;region&gt; dc-owner allow
@@ -1158,7 +1160,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
       
     
   </body>
