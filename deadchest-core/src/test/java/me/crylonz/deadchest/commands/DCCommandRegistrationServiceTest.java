@@ -75,9 +75,11 @@ public class DCCommandRegistrationServiceTest {
         Files.createDirectories(DeadChestLoader.plugin.getDataFolder().toPath());
         Files.deleteIfExists(dbPath);
         DeadChestLoader.db.init();
+        // Match plugin startup: finish synchronous schema creation before
+        // submitting work that uses the same SQLite connection.
+        PendingGivebackRepository.initialize(DeadChestLoader.plugin);
         ChestDataRepository.initTable(() -> {
         });
-        PendingGivebackRepository.initialize(DeadChestLoader.plugin);
         awaitAsyncDb();
         DeadChestLoader.config = new DeadChestConfig(DeadChestLoader.plugin);
         for (ConfigKey key : ConfigKey.values()) {
