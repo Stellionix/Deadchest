@@ -328,6 +328,7 @@ public class PlayerDeathListener implements Listener {
         Arrays.stream(inv.getContents())
                 .filter(Objects::nonNull)
                 .filter(itemStack -> itemStack.getItemMeta() instanceof Damageable)
+                .filter(itemStack -> itemStack.getType().getMaxDurability() > 0)
                 .forEach(itemStack -> {
                     Damageable itemData = (Damageable) itemStack.getItemMeta();
                     int loss = (int) (itemStack.getType().getMaxDurability() * lossPct / 100.0);

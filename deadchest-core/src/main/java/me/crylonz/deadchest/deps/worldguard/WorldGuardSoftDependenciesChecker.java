@@ -4,20 +4,23 @@ import com.sk89q.worldedit.bukkit.BukkitAdapter;
 import com.sk89q.worldguard.LocalPlayer;
 import com.sk89q.worldguard.WorldGuard;
 import com.sk89q.worldguard.bukkit.WorldGuardPlugin;
-import com.sk89q.worldguard.domains.DefaultDomain;
 import com.sk89q.worldguard.protection.ApplicableRegionSet;
+import com.sk89q.worldguard.protection.FlagValueCalculator;
+import com.sk89q.worldguard.protection.association.RegionAssociable;
+import com.sk89q.worldguard.protection.flags.Flag;
 import com.sk89q.worldguard.protection.flags.StateFlag;
 import com.sk89q.worldguard.protection.flags.registry.FlagConflictException;
 import com.sk89q.worldguard.protection.flags.registry.FlagRegistry;
+import com.sk89q.worldguard.protection.managers.RegionManager;
 import com.sk89q.worldguard.protection.regions.ProtectedRegion;
 import com.sk89q.worldguard.protection.regions.RegionQuery;
+import com.sk89q.worldguard.protection.util.NormativeOrders;
 import me.crylonz.deadchest.DeadChestLoader;
 import me.crylonz.deadchest.utils.ConfigKey;
 import org.bukkit.entity.Player;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.util.ArrayList;
+import java.util.List;
 
 import static me.crylonz.deadchest.DeadChestLoader.config;
 import static me.crylonz.deadchest.utils.Utils.generateLog;
@@ -49,61 +52,61 @@ public class WorldGuardSoftDependenciesChecker {
     }
 
     public boolean worldGuardChecker(Player p) {
-
         if (!config.getBoolean(ConfigKey.WORLD_GUARD_DETECTION)) {
             return true;
         }
-
         try {
             final RegionQuery query = WorldGuard.getInstance().getPlatform().getRegionContainer().createQuery();
             final ApplicableRegionSet set = query.getApplicableRegions(BukkitAdapter.adapt(p.getLocation()));
-            final LocalPlayer localPlayer = WorldGuardPlugin.inst().wrapPlayer(p);
-            final UUID uuid = p.getUniqueId();
-            boolean defaultAllow = config.getBoolean(ConfigKey.WORLD_GUARD_FLAG_DEFAULT);
-            final Set<Boolean> defaults = new HashSet<>();
-
-            for (ProtectedRegion region : set.getRegions()) {
-                State stateOwner = checkRegionFlag(region, DEADCHEST_OWNER_FLAG, region.getOwners(), uuid);
-                if (stateOwner == State.ALLOWED) return true;
-                State stateMember = checkRegionFlag(region, DEADCHEST_MEMBER_FLAG, region.getMembers(), uuid);
-                if (stateMember == State.ALLOWED) return true;
-
-                if (stateMember == State.NONE && stateOwner == State.NONE) {
-                    defaults.add(true);
-                } else {
-                    if (stateOwner == State.DENY || stateMember == State.DENY)
-                        return false;
-                    defaults.add(false);
-                }
-            }
-            if (defaults.size() == 1 && defaults.contains(true))
-                return defaultAllow;
-
-            final StateFlag.State state = set.queryState(localPlayer, DEADCHEST_GUEST_FLAG);
-            if (state == StateFlag.State.ALLOW) {
-                return true;
-            }
-            if (state == StateFlag.State.DENY) {
+            final LocalPlayer player = WorldGuardPlugin.inst().wrapPlayer(p);
+            final RegionManager manager = WorldGuard.getInstance().getPlatform().getRegionContainer()
+                    .get(BukkitAdapter.adapt(p.getWorld()));
+            final ProtectedRegion global = manager == null ? null : manager.getRegion(ProtectedRegion.GLOBAL_REGION);
+            boolean allowed = allowsDeadChest(set, global, player,
+                    config.getBoolean(ConfigKey.WORLD_GUARD_FLAG_DEFAULT));
+            if (!allowed) {
                 generateLog("Player [" + p.getName() + "] died without [WorldGuard] permission: No Deadchest generated");
-                return false;
             }
-            return defaultAllow;
+            return allowed;
         } catch (NoClassDefFoundError e) {
             return true;
         }
     }
 
-    private State checkRegionFlag(ProtectedRegion region, StateFlag flag, DefaultDomain uuids, UUID playerUUID) {
-        StateFlag.State state = region.getFlag(flag);
-        if (state == null) return State.NONE;
-        if (state == StateFlag.State.DENY) return State.DENY;
-        return state == StateFlag.State.ALLOW && uuids.contains(playerUUID) ? State.ALLOWED : State.NOT_APPLICABLE;
-    }
+    // Only used for calculation, never registered or saved. An absent value
+    // must defer to DeadChest's configured default.
+    private static final StateFlag EFFECTIVE_FLAG = new StateFlag("dc-effective", false) {
+        @Override
+        public State getDefault() {
+            return null;
+        }
+    };
 
-    private enum State {
-        NONE,
-        DENY,
-        ALLOWED,
-        NOT_APPLICABLE
+    static boolean allowsDeadChest(ApplicableRegionSet set, ProtectedRegion global,
+                                   LocalPlayer player, boolean defaultAllow) {
+        if (set.isVirtual()) {
+            return set.testState(player, EFFECTIVE_FLAG);
+        }
+        List<ProtectedRegion> regions = new ArrayList<>(set.getRegions());
+        regions.remove(global);
+        NormativeOrders.sort(regions);
+        FlagValueCalculator calculator = new FlagValueCalculator(regions, global) {
+            @Override
+            @SuppressWarnings("unchecked")
+            public <V> V getEffectiveFlag(ProtectedRegion region, Flag<V> flag, RegionAssociable subject) {
+                if (flag != EFFECTIVE_FLAG) {
+                    return super.getEffectiveFlag(region, flag, subject);
+                }
+                // WorldGuard includes inherited ownership/membership and groups.
+                // Owners use dc-owner, members dc-member, and everyone else dc-guest.
+                StateFlag roleFlag = region.isOwner(player) ? DEADCHEST_OWNER_FLAG
+                        : region.isMember(player) ? DEADCHEST_MEMBER_FLAG : DEADCHEST_GUEST_FLAG;
+                return (V) super.getEffectiveFlag(region, roleFlag, subject);
+            }
+        };
+        // One decision across all roles lets WorldGuard resolve priorities,
+        // inheritance and deny/allow conflicts even when roles differ by region.
+        StateFlag.State state = calculator.queryState(player, EFFECTIVE_FLAG);
+        return state == null ? defaultAllow : state == StateFlag.State.ALLOW;
     }
 }

@@ -48,6 +48,7 @@ dependencies {
     testImplementation("com.github.seeseemelk:MockBukkit-v1.20:3.88.1")
     testImplementation("org.xerial:sqlite-jdbc:3.46.1.3")
     testImplementation("org.mockito:mockito-core:5.14.2")
+    testImplementation("com.sk89q.worldguard:worldguard-bukkit:7.0.5-SNAPSHOT")
 
 }
 

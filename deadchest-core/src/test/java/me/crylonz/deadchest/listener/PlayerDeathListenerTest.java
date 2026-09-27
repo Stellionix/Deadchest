@@ -348,6 +348,38 @@ class PlayerDeathListenerTest {
         assertNull(player.getInventory().getItem(0), "Broken item should be removed after durability loss");
     }
 
+    @ParameterizedTest
+    @EnumSource(value = Material.class, names = {
+            "BOW", "CROSSBOW", "SHIELD", "ELYTRA", "TRIDENT", "FISHING_ROD",
+            "SHEARS", "FLINT_AND_STEEL", "DIAMOND_SWORD", "DIAMOND_CHESTPLATE"
+    })
+    void durabilityLossAppliesToEveryKindOfEquipment(Material material) throws Exception {
+        when(cfg.getInt(ConfigKey.ITEM_DURABILITY_LOSS_ON_DEATH)).thenReturn(10);
+        player.getInventory().setItem(0, new ItemStack(material));
+        java.lang.reflect.Method method = PlayerDeathListener.class
+                .getDeclaredMethod("applyDurabilityLoss", PlayerInventory.class);
+        method.setAccessible(true);
+        method.invoke(listener, player.getInventory());
+        org.bukkit.inventory.meta.Damageable meta = (org.bukkit.inventory.meta.Damageable)
+                player.getInventory().getItem(0).getItemMeta();
+        assertEquals((int) (material.getMaxDurability() * 0.1), meta.getDamage());
+    }
+
+    @Test
+    void durabilityLossDoesNotWriteMetadataOnOrdinaryItems() throws Exception {
+        when(cfg.getInt(ConfigKey.ITEM_DURABILITY_LOSS_ON_DEATH)).thenReturn(10);
+        ItemStack item = mock(ItemStack.class);
+        when(item.getType()).thenReturn(Material.DIAMOND);
+        when(item.getItemMeta()).thenReturn(mock(org.bukkit.inventory.meta.Damageable.class));
+        PlayerInventory inventory = mock(PlayerInventory.class);
+        when(inventory.getContents()).thenReturn(new ItemStack[]{item});
+        java.lang.reflect.Method method = PlayerDeathListener.class
+                .getDeclaredMethod("applyDurabilityLoss", PlayerInventory.class);
+        method.setAccessible(true);
+        method.invoke(listener, inventory);
+        verify(item, never()).setItemMeta(any());
+    }
+
 
     @Test
     void displayPositionMessageOnDeath() {

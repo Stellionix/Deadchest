@@ -30,18 +30,23 @@ DeadChest registers these custom region flags:
 |-------------|------------------------------------------------------|
 | `dc-owner`  | Region owners can generate DeadChest in the region.  |
 | `dc-member` | Region members can generate DeadChest in the region. |
-| `dc-guest`  | Any player can generate DeadChest in the region.     |
+| `dc-guest`  | Players who are neither owners nor members.          |
 
 ### How flags are evaluated
 
-At death location, DeadChest checks regions and applies logic in this order:
+At the death location, each region uses the flag matching the player's role:
+`dc-owner` for owners, `dc-member` for other members, and `dc-guest` for everyone
+else. An owner uses only `dc-owner`, even if also listed as a member.
+Membership includes WorldGuard permission groups and inherited membership.
 
-1. If `dc-owner=allow` and player is owner -> allow.
-2. If `dc-member=allow` and player is member -> allow.
-3. If owner/member flags explicitly deny -> deny.
-4. If `dc-guest=allow` -> allow.
-5. If `dc-guest=deny` -> deny.
-6. Otherwise fallback to `integrations.worldguard.default-allow`.
+WorldGuard resolves parent flags and region-group restrictions. Among applicable
+decisions, higher-priority regions take precedence. At equal priority, a child
+can override its parent; conflicting unrelated regions resolve to `deny`.
+The global region supplies a fallback below local regions.
+
+If no applicable flag is defined, DeadChest uses
+`integrations.worldguard.default-allow`. Flags for other roles do not affect
+the player.
 
 ### Example commands (WorldGuard)
 
