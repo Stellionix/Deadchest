@@ -79,14 +79,4 @@ publishing {
             from(components["java"])
         }
     }
-    repositories {
-        maven {
-            url = uri("https://maven.pkg.jetbrains.space/openbeam/p/minecraft-projects/plugins-artifacts")
-            credentials {
-                username = System.getenv("JB_SPACE_CLIENT_ID")
-                password = System.getenv("JB_SPACE_CLIENT_SECRET")
-            }
-
-        }
-    }
 }

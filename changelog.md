@@ -1,3 +1,11 @@
+## Deadchest 4.31.0 - 2026-09-27
+
+- 
+- Fixed death durability loss adding damage metadata to items without durability, while preserving durability loss for all damageable equipment
+- Fixed WorldGuard region priority and inheritance handling, including permission groups and global-region fallback
+- Fixed conflicting DeadChest flags in unrelated WorldGuard regions of equal priority so that deny takes precedence
+- Applied WorldGuard DeadChest flags according to the player's role: owner, member, or guest
+
 ## Deadchest 4.30.0 - 2026-04-10
 
 - Reworked `/dc giveback` with deterministic selectors:
