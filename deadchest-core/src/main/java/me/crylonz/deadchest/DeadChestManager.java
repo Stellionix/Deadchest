@@ -28,8 +28,8 @@ public class DeadChestManager {
      *
      * @return number of deadchests removed
      */
-    public static int cleanAllDeadChests() {
-
+    public static int cleanAllDeadChests() { return cleanAllDeadChests("system"); }
+    public static int cleanAllDeadChests(String actor) {
         int chestDataRemoved = 0;
         final InMemoryChestStore inMemoryChestStore = DeadChestLoader.getChestDataCache();
         final Map<Location, ChestData> chestDataList = inMemoryChestStore.getAllChestData();
@@ -37,7 +37,7 @@ public class DeadChestManager {
         if (chestDataList != null && !chestDataList.isEmpty()) {
             for (final ChestData chestData : chestDataList.values()) {
                 if (chestData != null) {
-                    DeadChestLoader.getSchedulerAdapter().executeAtLocation(chestData.getChestLocation(), () -> removeDeadChest(chestData));
+                    DeadChestLoader.getSchedulerAdapter().executeAtLocation(chestData.getChestLocation(), () -> removeDeadChest(chestData, actor));
                     chestDataRemoved++;
                 }
             }
@@ -252,7 +252,7 @@ public class DeadChestManager {
         return Math.max(0L, publicEnd - now);
     }
 
-    private static long getExpirationTimeMillis(ChestData chestData, Date date) {
+    public static long getExpirationTimeMillis(ChestData chestData, Date date) {
         if (chestData == null || date == null || chestData.isInfinity()) {
             return -1L;
         }
@@ -397,6 +397,15 @@ public class DeadChestManager {
             return;
         }
 
+        if (chestData.isTransitioning()) return;
+        if (ChestLifecycle.enabled() && hasChestExpired(chestData, now)) {
+            ChestLifecycle.transition(chestData, shouldDropItemsWhenChestExpires() ? ChestLifecycle.Outcome.DROPPED : ChestLifecycle.Outcome.EXPIRED,
+                    "expiry", () -> {
+                        handleExpirateDeadChest(chestData, now);
+                        DeadChestLoader.getChestDataCache().removeChestData(chestData);
+                    });
+            return;
+        }
         updateTimer(chestData, now);
 
         final ExpiredActionType expiredActionType = handleExpirateDeadChest(chestData, now);
@@ -421,7 +430,11 @@ public class DeadChestManager {
         }
     }
 
-    public static void removeDeadChest(ChestData chestData) {
+    public static void removeDeadChest(ChestData chestData) { removeDeadChest(chestData, "system"); }
+    public static void removeDeadChest(ChestData chestData, String actor) {
+        if (ChestLifecycle.enabled() && chestData != null) {
+            ChestLifecycle.transition(chestData, ChestLifecycle.Outcome.DELETED, actor, () -> ChestTransfers.remove(chestData)); return;
+        }
         if (chestData == null) {
             return;
         }

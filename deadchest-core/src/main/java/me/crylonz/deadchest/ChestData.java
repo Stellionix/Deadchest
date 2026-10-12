@@ -16,6 +16,17 @@ import java.util.function.Consumer;
 @SerializableAs("ChestData")
 public final class ChestData {
 
+    private java.util.concurrent.atomic.AtomicBoolean transitioning = new java.util.concurrent.atomic.AtomicBoolean();
+    private java.util.concurrent.atomic.AtomicBoolean creating = new java.util.concurrent.atomic.AtomicBoolean();
+    public boolean claimTransition() { return !creating.get() && transitioning.compareAndSet(false, true); }
+    public void cancelUnpreparedTransition() { transitioning.set(false); }
+    public boolean isTransitioning() { return creating.get() || transitioning.get(); }
+    public void beginCreation() { creating.set(true); }
+    public void creationSaved() { creating.set(false); }
+    private UUID chestId = UUID.randomUUID();
+    public UUID getId() { return chestId; }
+    /** Repository-only hydration; never change the identity of an active chest. */
+    public void loadPersistentId(UUID id) { this.chestId = java.util.Objects.requireNonNull(id); }
     private List<ItemStack> inventory;
     private Location chestLocation;
     private String playerName;
@@ -33,8 +44,12 @@ public final class ChestData {
     private int xpStored;
 
     public ChestData(ChestData chest) {
-        this.inventory = chest.getInventory();
-        this.chestLocation = chest.getChestLocation();
+        this.chestId = chest.getId();
+        this.transitioning = chest.transitioning;
+        this.creating = chest.creating;
+        this.inventory = new ArrayList<>();
+        for (ItemStack item : chest.getInventory()) this.inventory.add(item == null ? null : item.clone());
+        this.chestLocation = chest.getChestLocation().clone();
         this.playerName = chest.getPlayerName();
         this.playerUUID = chest.getPlayerUUID();
         this.chestDate = chest.getChestDate();
@@ -219,7 +234,7 @@ public final class ChestData {
             }
 
             if (shouldForceLoadChunk) {
-                chestLocation.getChunk().setForceLoaded(true);
+                me.crylonz.deadchest.utils.LegacySupport.setForceLoaded(chestLocation.getChunk(), true);
             }
 
             Collection<Entity> entities = chestLocation.getWorld().getNearbyEntities(
@@ -241,7 +256,7 @@ public final class ChestData {
 
             if (shouldForceLoadChunk && isChunkForceLoaded()) {
                 chestLocation.getWorld().unloadChunk(chestLocation.getBlockX() >> 4, chestLocation.getBlockZ() >> 4);
-                chestLocation.getChunk().setForceLoaded(false);
+                me.crylonz.deadchest.utils.LegacySupport.setForceLoaded(chestLocation.getChunk(), false);
             }
 
             return isEmpty;
@@ -259,7 +274,7 @@ public final class ChestData {
 
     public boolean isChunkForceLoaded() {
         return chestLocation.getWorld() == null ||
-                chestLocation.getWorld().isChunkForceLoaded(
+                me.crylonz.deadchest.utils.LegacySupport.isForceLoaded(chestLocation.getWorld(),
                         chestLocation.getBlockX() >> 4,
                         chestLocation.getBlockZ() >> 4
                 );

@@ -52,6 +52,7 @@ public class DeadChestLoader {
     public static SQLExecutor sqlExecutor = new SQLExecutor();
     private SchedulerTaskHandle maintenanceTask;
     private SchedulerTaskHandle animationTask;
+    private SchedulerTaskHandle transferTask;
     private static SchedulerAdapter scheduler;
     private static Plugin schedulerPluginOwner;
 
@@ -59,6 +60,7 @@ public class DeadChestLoader {
         super();
         javaPlugin = dcjavaPlugin;
         plugin = dcPlugin;
+        RecoveryJournal.initialize();
         scheduler = new SchedulerAdapter(dcPlugin);
         schedulerPluginOwner = dcPlugin;
     }
@@ -68,6 +70,10 @@ public class DeadChestLoader {
         // db parts
         db = new SQLite(plugin);
         db.init();
+        PlayerTransfers.initialize();
+        PlayerTransfers.active().awaitHydration();
+        Bukkit.getPluginManager().registerEvents(PlayerTransfers.active(), plugin);
+        transferTask=getSchedulerAdapter().runGlobalRepeating(()->PlayerTransfers.active().tick(),20,20);
         IgnoreItemListRepository.initTable();
 
         local = new Localization(plugin);
@@ -78,7 +84,9 @@ public class DeadChestLoader {
 
         ChestDataRepository.initTable(/* migrate old chestData.yml config */ OldChestData::migrateOldChestData);
 
-        ChestDataRepository.findAllAsync(chestData::setChestData, plugin);
+        ChestDataRepository.findAllAsync(chests -> {
+            chestData.setChestData(chests); PlayerTransfers.active().hydrated();
+        }, plugin);
 
         registerConfig();
         initializeConfig();
@@ -142,8 +150,10 @@ public class DeadChestLoader {
     public void disable() {
         scheduler.cancelTask(maintenanceTask);
         scheduler.cancelTask(animationTask);
+        scheduler.cancelTask(transferTask);
 
-        ChestDataRepository.saveAllAsync(getChestDataCache().getAllChestData().values());
+        ChestDataRepository.saveAllAsync(getChestDataCache().getChestData().stream()
+                .filter(c -> !PlayerTransfers.blocked(c.getId())).collect(java.util.stream.Collectors.toList()));
         sqlExecutor.shutdown();
         db.close();
     }

@@ -33,6 +33,9 @@ public class InMemoryChestStore {
      * @param chestData chest data to add
      */
     public void addChestData(final ChestData chestData) {
+        if (me.crylonz.deadchest.RecoveryJournal.blocked(chestData.getId())) return;
+        if (me.crylonz.deadchest.PlayerTransfers.blocked(chestData.getId())) chestData.beginCreation();
+        me.crylonz.deadchest.ChestLifecycle.created(chestData);
         addPlayerData(chestData);
         chestDataMap.put(normalizeLocation(chestData.getChestLocation()), chestData);
 
@@ -46,7 +49,7 @@ public class InMemoryChestStore {
      */
     public void addListOfChestData(final Set<ChestData> chestThatNeedsBeUpdated) {
         chestThatNeedsBeUpdated.forEach((chestData) -> {
-            if (chestData == null) {
+            if (chestData == null || me.crylonz.deadchest.RecoveryJournal.blocked(chestData.getId())) {
                 return;
             }
             Location normalizedLocation = normalizeLocation(chestData.getChestLocation());
@@ -175,10 +178,22 @@ public class InMemoryChestStore {
      * @param chest chest to remove
      */
     public void removeChestData(@Nonnull final ChestData chest) {
+        if (me.crylonz.deadchest.ChestLifecycle.enabled() && !chest.isTransitioning()) {
+            me.crylonz.deadchest.ChestLifecycle.transition(chest, me.crylonz.deadchest.ChestLifecycle.Outcome.DELETED,
+                    "system/API", () -> removeChestData(chest));
+            return;
+        }
         chest.removeArmorStand();
         chest.remove();
         removePlayerData(chest);
         chestDataMap.remove(normalizeLocation(chest.getChestLocation()));
+    }
+
+    /** Transfer coordinator already committed the UUID-specific deletion. */
+    public void forgetChestData(ChestData chest) {
+        Location key=normalizeLocation(chest.getChestLocation());
+        ChestData current=chestDataMap.get(key);
+        if (current!=null && current.getId().equals(chest.getId()) && chestDataMap.remove(key,current)) removePlayerData(current);
     }
 
     /**
@@ -187,21 +202,26 @@ public class InMemoryChestStore {
      * @param chests chest collection to remove
      */
     public void removeChestDataList(@Nonnull final Collection<ChestData> chests) {
-        chests.forEach(chestData -> {
-            chestData.removeArmorStand();
-            this.chestDataMap.remove(normalizeLocation(chestData.getChestLocation()));
-            removePlayerData(chestData);
-        });
-        ChestDataRepository.removeBatchAsync(chests);
+        if (!me.crylonz.deadchest.ChestLifecycle.enabled()) {
+            chests.forEach(chestData -> {
+                chestData.removeArmorStand();
+                this.chestDataMap.remove(normalizeLocation(chestData.getChestLocation()));
+                removePlayerData(chestData);
+            });
+            ChestDataRepository.removeBatchAsync(chests);
+            return;
+        }
+        chests.forEach(this::removeChestData);
     }
 
     /**
      * Clears all in-memory state and schedules full database cleanup.
      */
     public void clearChestData() {
-        chestDataMap.clear();
-        playerChestLocations.clear();
-        ChestDataRepository.clearAsync();
+        if (!me.crylonz.deadchest.ChestLifecycle.enabled()) {
+            chestDataMap.clear(); playerChestLocations.clear(); ChestDataRepository.clearAsync(); return;
+        }
+        new ArrayList<>(chestDataMap.values()).forEach(this::removeChestData);
     }
 
     /**

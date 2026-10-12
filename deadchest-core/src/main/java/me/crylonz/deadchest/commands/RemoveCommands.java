@@ -32,7 +32,8 @@ final class RemoveCommands extends DCSubCommandRegistration {
                 for (final ChestData chestData : chestDataMap.values()) {
                     if (chestData.getChestLocation().getWorld() != null &&
                             (chestData.isInfinity() || config.getInt(ConfigKey.DEADCHEST_DURATION) == 0)) {
-                        getSchedulerAdapter().executeAtLocation(chestData.getChestLocation(), () -> removeDeadChest(chestData));
+                        String actor = sender().getName();
+                        getSchedulerAdapter().executeAtLocation(chestData.getChestLocation(), () -> removeDeadChest(chestData, actor));
                         count++;
                     }
                 }
@@ -44,7 +45,7 @@ final class RemoveCommands extends DCSubCommandRegistration {
 
     void registerRemoveAll() {
         registerCommand("dc removeall", Permission.ADMIN.label, () -> {
-            int count = cleanAllDeadChests();
+            int count = me.crylonz.deadchest.DeadChestManager.cleanAllDeadChests(sender().getName());
             sender().sendMessage(local.prefixed("commands.operation.deadchests-removed", count));
         });
     }
@@ -79,7 +80,8 @@ final class RemoveCommands extends DCSubCommandRegistration {
                             continue;
                         }
 
-                        getSchedulerAdapter().executeAtLocation(chestData.getChestLocation(), () -> removeDeadChest(chestData));
+                        String actor = sender().getName();
+                        getSchedulerAdapter().executeAtLocation(chestData.getChestLocation(), () -> removeDeadChest(chestData, actor));
                         count++;
                     }
                 }
@@ -89,7 +91,8 @@ final class RemoveCommands extends DCSubCommandRegistration {
                         continue;
                     }
 
-                    getSchedulerAdapter().executeAtLocation(chestData.getChestLocation(), () -> removeDeadChest(chestData));
+                    String actor = sender().getName();
+                        getSchedulerAdapter().executeAtLocation(chestData.getChestLocation(), () -> removeDeadChest(chestData, actor));
                     count++;
                 }
             }

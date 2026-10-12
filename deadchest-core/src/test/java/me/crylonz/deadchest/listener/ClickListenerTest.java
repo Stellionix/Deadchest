@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * Unit tests for DeadChest main interaction listener.
@@ -40,13 +41,32 @@ class ClickListenerTest {
     private BlockMock chestBlock;
     private ClickListener listener;
     private InMemoryChestStore deadChest;
+    private org.mockito.MockedStatic<me.crylonz.deadchest.RecoveryJournal> journalMock;
 
     @BeforeEach
     void setUp() {
         MockBukkit.mock();
-        world = new WorldMock();
+        DeadChestLoader.plugin = MockBukkit.createMockPlugin();
+        me.crylonz.deadchest.ChestLifecycle.observe(null);
+        DeadChestLoader.sqlExecutor = mock(me.crylonz.deadchest.db.SQLExecutor.class);
+        doAnswer(a -> { ((Runnable)a.getArgument(0)).run(); return null; }).when(DeadChestLoader.sqlExecutor).runAsync(any(Runnable.class));
+        DeadChestLoader.db = new me.crylonz.deadchest.db.SQLite(DeadChestLoader.plugin);
+        DeadChestLoader.db.init();
+        me.crylonz.deadchest.db.ChestDataRepository.initTable(() -> {});
+        clearInvocations(DeadChestLoader.sqlExecutor);
+        me.crylonz.deadchest.PlayerTransfers.initialize();
+        journalMock = mockStatic(me.crylonz.deadchest.RecoveryJournal.class);
+        journalMock.when(me.crylonz.deadchest.RecoveryJournal::active)
+                .thenReturn(mock(me.crylonz.deadchest.RecoveryJournal.class));
+        world = new WorldMock() { @Override public boolean isChunkForceLoaded(int x,int z) { return false; } };
         MockBukkit.getMock().addWorld(world);
-        player = new PlayerMock(MockBukkit.getMock(), "Steve");
+        player = spy(new PlayerMock(MockBukkit.getMock(), "Steve"));
+        doNothing().when(player).saveData();
+        java.util.Set<String> receipts = new java.util.HashSet<>();
+        doReturn(receipts).when(player).getScoreboardTags();
+        doAnswer(a -> receipts.add(a.getArgument(0))).when(player).addScoreboardTag(anyString());
+        doAnswer(a -> receipts.remove(a.getArgument(0))).when(player).removeScoreboardTag(anyString());
+        doReturn(true).when(player).isOnline();
         chestBlock = world.getBlockAt(0, 64, 0);
         chestBlock.setType(Material.CHEST);
         DeadChestLoader.graveBlocks.add(Material.CHEST);
@@ -65,12 +85,29 @@ class ClickListenerTest {
 
     @AfterEach
     void tearDown() {
+        journalMock.close();
+        DeadChestLoader.db.close();
         MockBukkit.unmock();
+    }
+
+    private ChestData chest() {
+        ChestData c=mock(ChestData.class);
+        when(c.getPlayerUUID()).thenReturn(UUID.randomUUID());
+        when(c.getPlayerStringUUID()).thenAnswer(a -> c.getPlayerUUID().toString());
+        when(c.getPlayerName()).thenReturn("Steve");
+        when(c.getWorldName()).thenReturn(world.getName());
+        when(c.getChestDate()).thenReturn(new Date());
+        when(c.getHolographicTimer()).thenReturn(chestBlock.getLocation());
+        when(c.getHolographicTimerId()).thenReturn(UUID.randomUUID());
+        when(c.getHolographicOwnerId()).thenReturn(UUID.randomUUID());
+        return c;
     }
 
     @Test
     void testIsNearGraveChest_CancelsEvent() {
-        ChestData cd = mock(ChestData.class);
+        ChestData cd = chest();
+        when(cd.claimTransition()).thenReturn(true);
+        when(cd.getId()).thenReturn(UUID.randomUUID());
         when(cd.getChestLocation()).thenReturn(chestBlock.getLocation());
         deadChest.addChestData(cd);
 
@@ -78,6 +115,7 @@ class ClickListenerTest {
                 new ItemStack(Material.STONE), chestBlock, BlockFace.UP);
 
         listener.onClick(event);
+        MockBukkit.getMock().getScheduler().performTicks(6);
         assertTrue(event.isCancelled(), "Right click near DeadChest should cancel the event");
     }
 
@@ -86,7 +124,9 @@ class ClickListenerTest {
         // Config requires ownership
         when(DeadChestLoader.config.getBoolean(ConfigKey.ONLY_OWNER_CAN_OPEN_CHEST)).thenReturn(true);
 
-        ChestData cd = mock(ChestData.class);
+        ChestData cd = chest();
+        when(cd.claimTransition()).thenReturn(true);
+        when(cd.getId()).thenReturn(UUID.randomUUID());
         when(cd.getChestLocation()).thenReturn(chestBlock.getLocation());
         when(cd.getPlayerUUID()).thenReturn(UUID.randomUUID());
         deadChest.addChestData(cd);
@@ -94,6 +134,7 @@ class ClickListenerTest {
                 new ItemStack(Material.CHEST), chestBlock, BlockFace.UP);
 
         listener.onClick(event);
+        MockBukkit.getMock().getScheduler().performTicks(6);
 
         assertTrue(event.isCancelled(), "Event should be cancelled for non-owner");
         assertEquals("[DC] You are not the owner", player.nextMessage());
@@ -106,9 +147,11 @@ class ClickListenerTest {
         when(DeadChestLoader.config.getBoolean(ConfigKey.REQUIRE_PERMISSION_TO_GET_CHEST)).thenReturn(false);
         when(DeadChestLoader.config.getInt(ConfigKey.DROP_MODE)).thenReturn(1);
 
-        ChestData cd = mock(ChestData.class);
+        ChestData cd = chest();
+        when(cd.claimTransition()).thenReturn(true);
+        when(cd.getId()).thenReturn(UUID.randomUUID());
         when(cd.getChestLocation()).thenReturn(chestBlock.getLocation());
-        when(cd.getPlayerUUID()).thenReturn(player.getUniqueId());
+        doReturn(player.getUniqueId()).when(cd).getPlayerUUID();
         when(cd.getInventory()).thenReturn(Arrays.asList(new ItemStack(Material.DIAMOND), new ItemStack(Material.APPLE)));
         when(cd.getXpStored()).thenReturn(5);
         deadChest.addChestData(cd);
@@ -117,11 +160,34 @@ class ClickListenerTest {
                 new ItemStack(Material.CHEST), chestBlock, BlockFace.UP);
 
         listener.onClick(event);
+        MockBukkit.getMock().getScheduler().performTicks(6);
 
         PlayerInventory inv = player.getInventory();
         assertTrue(inv.contains(Material.DIAMOND), "Diamond should be restored to player inventory");
         assertTrue(inv.contains(Material.APPLE), "Apple should be restored to player inventory");
+        verify(player).saveData();
+        org.mockito.InOrder order = inOrder(player, DeadChestLoader.sqlExecutor);
+        order.verify(player).saveData();
+        order.verify(DeadChestLoader.sqlExecutor).runAsync(any(Runnable.class));
         assertEquals(Material.AIR, chestBlock.getType(), "Chest block should be removed after pickup");
+        assertTrue(new me.crylonz.deadchest.TransferStore(DeadChestLoader.plugin.getDataFolder().toPath().resolve("data.db")).pending().isEmpty());
+    }
+
+    @Test
+    void failedPlayerSaveDoesNotAcknowledgeRecovery() {
+        when(DeadChestLoader.config.getInt(ConfigKey.DROP_MODE)).thenReturn(1);
+        ChestData cd = chest();
+        when(cd.claimTransition()).thenReturn(true);
+        when(cd.getId()).thenReturn(UUID.randomUUID());
+        when(cd.getChestLocation()).thenReturn(chestBlock.getLocation());
+        when(cd.getInventory()).thenReturn(List.of(new ItemStack(Material.DIAMOND)));
+        deadChest.addChestData(cd);
+        doThrow(new IllegalStateException("disk unavailable")).when(player).saveData();
+        listener.onClick(new PlayerInteractEvent(player, Action.LEFT_CLICK_BLOCK,
+                new ItemStack(Material.STONE), chestBlock, BlockFace.UP));
+        MockBukkit.getMock().getScheduler().performTicks(6);
+        verify(player).saveData();
+        verify(DeadChestLoader.sqlExecutor, never()).runAsync(any(Runnable.class));
     }
 
     @Test
@@ -130,7 +196,9 @@ class ClickListenerTest {
         when(DeadChestLoader.config.getBoolean(ConfigKey.ONLY_OWNER_CAN_OPEN_CHEST)).thenReturn(false);
         when(DeadChestLoader.config.getInt(ConfigKey.DROP_MODE)).thenReturn(2);
 
-        ChestData cd = mock(ChestData.class);
+        ChestData cd = chest();
+        when(cd.claimTransition()).thenReturn(true);
+        when(cd.getId()).thenReturn(UUID.randomUUID());
         when(cd.getChestLocation()).thenReturn(chestBlock.getLocation());
         when(cd.getInventory()).thenReturn(List.of(new ItemStack(Material.EMERALD)));
         when(cd.getXpStored()).thenReturn(10);
@@ -140,6 +208,7 @@ class ClickListenerTest {
                 new ItemStack(Material.CHEST), chestBlock, BlockFace.UP);
 
         listener.onClick(event);
+        MockBukkit.getMock().getScheduler().performTicks(6);
 
         assertEquals(Material.AIR, chestBlock.getType(), "Chest should be removed in drop mode");
         // World drops are not directly testable in MockBukkit (but you can spy WorldMock if needed)
@@ -150,15 +219,18 @@ class ClickListenerTest {
         when(DeadChestLoader.config.getBoolean(ConfigKey.REQUIRE_PERMISSION_TO_GET_CHEST)).thenReturn(true);
         when(DeadChestLoader.config.getBoolean(ConfigKey.ONLY_OWNER_CAN_OPEN_CHEST)).thenReturn(false);
 
-        ChestData cd = mock(ChestData.class);
+        ChestData cd = chest();
+        when(cd.claimTransition()).thenReturn(true);
+        when(cd.getId()).thenReturn(UUID.randomUUID());
         when(cd.getChestLocation()).thenReturn(chestBlock.getLocation());
-        when(cd.getPlayerUUID()).thenReturn(player.getUniqueId());
+        doReturn(player.getUniqueId()).when(cd).getPlayerUUID();
         deadChest.addChestData(cd);
 
         PlayerInteractEvent event = new PlayerInteractEvent(player, Action.LEFT_CLICK_BLOCK,
                 new ItemStack(Material.CHEST), chestBlock, BlockFace.UP);
 
         listener.onClick(event);
+        MockBukkit.getMock().getScheduler().performTicks(6);
 
         assertTrue(event.isCancelled(), "Event should be cancelled when player lacks GET permission");
         assertEquals("[DC] You cannot take this chest", player.nextMessage());
@@ -174,7 +246,9 @@ class ClickListenerTest {
         when(DeadChestLoader.config.getInt(ConfigKey.LOOT_PUBLIC_DURATION)).thenReturn(30);
         when(DeadChestLoader.config.getInt(ConfigKey.DROP_MODE)).thenReturn(1);
 
-        ChestData cd = mock(ChestData.class);
+        ChestData cd = chest();
+        when(cd.claimTransition()).thenReturn(true);
+        when(cd.getId()).thenReturn(UUID.randomUUID());
         when(cd.getChestLocation()).thenReturn(chestBlock.getLocation());
         when(cd.getPlayerUUID()).thenReturn(UUID.randomUUID());
         when(cd.getChestDate()).thenReturn(new Date(System.currentTimeMillis() - 10_000L));
@@ -187,6 +261,7 @@ class ClickListenerTest {
                 new ItemStack(Material.CHEST), chestBlock, BlockFace.UP);
 
         listener.onClick(event);
+        MockBukkit.getMock().getScheduler().performTicks(6);
 
         assertTrue(player.getInventory().contains(Material.DIAMOND), "Public phase chest should be lootable by other players");
         assertEquals(Material.AIR, chestBlock.getType(), "Looted public chest should be removed");
@@ -194,7 +269,13 @@ class ClickListenerTest {
 
     @Test
     void testClickOnDeadChest_DuringPublicPhase_KillerCanLootWhenEnabled() {
-        PlayerMock killer = new PlayerMock(MockBukkit.getMock(), "Alex");
+        PlayerMock killer = spy(new PlayerMock(MockBukkit.getMock(), "Alex"));
+        doReturn(true).when(killer).isOnline();
+        doNothing().when(killer).saveData();
+        java.util.Set<String> receipts = new java.util.HashSet<>();
+        doReturn(receipts).when(killer).getScoreboardTags();
+        doAnswer(a -> receipts.add(a.getArgument(0))).when(killer).addScoreboardTag(anyString());
+        doAnswer(a -> receipts.remove(a.getArgument(0))).when(killer).removeScoreboardTag(anyString());
         when(DeadChestLoader.config.getBoolean(ConfigKey.ONLY_OWNER_CAN_OPEN_CHEST)).thenReturn(true);
         when(DeadChestLoader.config.getBoolean(ConfigKey.REQUIRE_PERMISSION_TO_GET_CHEST)).thenReturn(false);
         when(DeadChestLoader.config.getBoolean(ConfigKey.LOOT_ENABLED)).thenReturn(true);
@@ -205,10 +286,12 @@ class ClickListenerTest {
         when(DeadChestLoader.config.getInt(ConfigKey.LOOT_PUBLIC_DURATION)).thenReturn(30);
         when(DeadChestLoader.config.getInt(ConfigKey.DROP_MODE)).thenReturn(1);
 
-        ChestData cd = mock(ChestData.class);
+        ChestData cd = chest();
+        when(cd.claimTransition()).thenReturn(true);
+        when(cd.getId()).thenReturn(UUID.randomUUID());
         when(cd.getChestLocation()).thenReturn(chestBlock.getLocation());
         when(cd.getPlayerUUID()).thenReturn(UUID.randomUUID());
-        when(cd.getKillerUUID()).thenReturn(killer.getUniqueId());
+        doReturn(killer.getUniqueId()).when(cd).getKillerUUID();
         when(cd.getChestDate()).thenReturn(new Date(System.currentTimeMillis() - 10_000L));
         when(cd.isInfinity()).thenReturn(false);
         when(cd.getInventory()).thenReturn(List.of(new ItemStack(Material.EMERALD)));
@@ -219,6 +302,7 @@ class ClickListenerTest {
                 new ItemStack(Material.CHEST), chestBlock, BlockFace.UP);
 
         listener.onClick(event);
+        MockBukkit.getMock().getScheduler().performTicks(6);
 
         assertTrue(killer.getInventory().contains(Material.EMERALD), "Configured killer should be able to loot during public phase");
     }
@@ -233,7 +317,9 @@ class ClickListenerTest {
         when(DeadChestLoader.config.getInt(ConfigKey.DEADCHEST_DURATION)).thenReturn(1);
         when(DeadChestLoader.config.getInt(ConfigKey.LOOT_PUBLIC_DURATION)).thenReturn(30);
 
-        ChestData cd = mock(ChestData.class);
+        ChestData cd = chest();
+        when(cd.claimTransition()).thenReturn(true);
+        when(cd.getId()).thenReturn(UUID.randomUUID());
         when(cd.getChestLocation()).thenReturn(chestBlock.getLocation());
         when(cd.getPlayerUUID()).thenReturn(UUID.randomUUID());
         when(cd.getKillerUUID()).thenReturn(UUID.randomUUID());
@@ -245,6 +331,7 @@ class ClickListenerTest {
                 new ItemStack(Material.CHEST), chestBlock, BlockFace.UP);
 
         listener.onClick(event);
+        MockBukkit.getMock().getScheduler().performTicks(6);
 
         assertTrue(event.isCancelled(), "Other player should be denied when public access is disabled");
         assertEquals("[DC] You are not the owner", player.nextMessage());

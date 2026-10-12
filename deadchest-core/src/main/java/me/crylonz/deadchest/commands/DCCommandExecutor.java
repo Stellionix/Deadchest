@@ -10,17 +10,16 @@ import static me.crylonz.deadchest.DeadChestLoader.local;
 public class DCCommandExecutor implements CommandExecutor {
 
     private final DeadChestLoader plugin;
-    private final DCCommandRegistrationService commandRegistration;
 
     public DCCommandExecutor(DeadChestLoader deadChestLoader) {
         this.plugin = deadChestLoader;
-        this.commandRegistration = new DCCommandRegistrationService(plugin);
     }
 
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-
+        // Commands may arrive concurrently from different Folia regions.
+        final DCCommandRegistrationService commandRegistration = new DCCommandRegistrationService(plugin);
         commandRegistration.register(sender, args);
 
         commandRegistration.registerReload();           // dc reload

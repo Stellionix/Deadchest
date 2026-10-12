@@ -36,8 +36,12 @@ public class DeadChestAPI {
      * @return true if chest is returned to its owner
      */
     public static boolean giveBackChest(Player player, ChestData chest) {
+        if (chest == null || PlayerTransfers.blocked(chest.getId())) return false;
+        if (ChestLifecycle.enabled()) {
+            return ChestTransfers.giveBack(player, chest, me.crylonz.deadchest.commands.GivebackStrategy.GROUND, "API");
+        }
         if (DeadChestLoader.getSchedulerAdapter().isFoliaLikeRuntime()) {
-            return giveBackChestAsync(player, chest).join();
+            throw new IllegalStateException("Use giveBackChestAsync on Folia; blocking waits are unsafe");
         }
 
         if (player.isOnline()) {
@@ -54,11 +58,15 @@ public class DeadChestAPI {
     public static CompletableFuture<Boolean> giveBackChestAsync(Player player, ChestData chest) {
         CompletableFuture<Boolean> future = new CompletableFuture<>();
 
-        if (player == null || chest == null || !player.isOnline()) {
+        if (player == null || chest == null || !player.isOnline() || PlayerTransfers.blocked(chest.getId())) {
             future.complete(false);
             return future;
         }
 
+        if (ChestLifecycle.enabled()) {
+            future.complete(ChestTransfers.giveBack(player, chest, me.crylonz.deadchest.commands.GivebackStrategy.GROUND, "API"));
+            return future;
+        }
         DeadChestLoader.getSchedulerAdapter().executeForEntity(player, () -> {
             for (ItemStack itemStack : chest.getInventory()) {
                 if (itemStack != null) {
@@ -85,8 +93,12 @@ public class DeadChestAPI {
      * @return true if the chest is correctly removed
      */
     public static boolean removeChest(ChestData chest) {
+        if (ChestLifecycle.enabled()) {
+            ChestData active = chest == null ? null : DeadChestLoader.getChestData(chest.getChestLocation());
+            return active != null && active.getId().equals(chest.getId()) && ChestLifecycle.transition(active, ChestLifecycle.Outcome.DELETED, "API", () -> ChestTransfers.remove(active));
+        }
         if (DeadChestLoader.getSchedulerAdapter().isFoliaLikeRuntime()) {
-            return removeChestAsync(chest).join();
+            throw new IllegalStateException("Use removeChestAsync on Folia; blocking waits are unsafe");
         }
 
         World world = Bukkit.getWorld(chest.getWorldName());
@@ -109,6 +121,9 @@ public class DeadChestAPI {
         }
 
         final InMemoryChestStore chestDataStore = DeadChestLoader.getChestDataCache();
+        if (ChestLifecycle.enabled()) {
+            future.complete(removeChest(chest)); return future;
+        }
         if (chestDataStore.getChestData(chest.getChestLocation()) == null) {
             future.complete(false);
             return future;

@@ -117,8 +117,8 @@ public class ChestDataRepository {
                 "player_uuid, player_name, chest_world, chest_x, chest_y, chest_z, chest_yaw, chest_pitch, " +
                 "chest_date, is_infinity, is_removed_block, " +
                 "holo_world, holo_x, holo_y, holo_z, holo_yaw, holo_pitch, " +
-                "holographic_timer_id, holographic_status_id, holographic_owner_id, killer_uuid, world_name, xp_stored, inventory" +
-                ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                "holographic_timer_id, holographic_status_id, holographic_owner_id, killer_uuid, world_name, xp_stored, inventory, chest_uuid" +
+                ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = db.connection();
              Statement clear = conn.createStatement();
@@ -168,6 +168,7 @@ public class ChestDataRepository {
                 ps.setString(22, chest.getWorldName());
                 ps.setInt(23, chest.getXpStored());
                 ps.setBytes(24, ItemBytes.toBytesList(chest.getInventory()));
+            ps.setString(25, chest.getId().toString());
 
 
                 ps.addBatch();
@@ -185,8 +186,8 @@ public class ChestDataRepository {
                 "player_uuid, player_name, chest_world, chest_x, chest_y, chest_z, chest_yaw, chest_pitch, " +
                 "chest_date, is_infinity, is_removed_block, " +
                 "holo_world, holo_x, holo_y, holo_z, holo_yaw, holo_pitch, " +
-                "holographic_timer_id, holographic_status_id, holographic_owner_id, killer_uuid, world_name, xp_stored, inventory" +
-                ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                "holographic_timer_id, holographic_status_id, holographic_owner_id, killer_uuid, world_name, xp_stored, inventory, chest_uuid" +
+                ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         final String sqlUpdate = "UPDATE chest_data SET " +
                 "chest_date = ?," +
                 " is_infinity = ?, " +
@@ -266,7 +267,8 @@ public class ChestDataRepository {
                         }
                         psInsert.setString(i++, chest.getWorldName());
                         psInsert.setInt(i++, chest.getXpStored());
-                        psInsert.setBytes(i, ItemBytes.toBytesList(chest.getInventory()));
+                        psInsert.setBytes(i++, ItemBytes.toBytesList(chest.getInventory()));
+                        psInsert.setString(i, chest.getId().toString());
                         psInsert.addBatch();
                         hasInserts = true;
                     } else {
@@ -412,8 +414,8 @@ public class ChestDataRepository {
                 "player_uuid, player_name, chest_world, chest_x, chest_y, chest_z, chest_yaw, chest_pitch, " +
                 "chest_date, is_infinity, is_removed_block, " +
                 "holo_world, holo_x, holo_y, holo_z, holo_yaw, holo_pitch, " +
-                "holographic_timer_id, holographic_status_id, holographic_owner_id, killer_uuid, world_name, xp_stored, inventory" +
-                ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                "holographic_timer_id, holographic_status_id, holographic_owner_id, killer_uuid, world_name, xp_stored, inventory, chest_uuid" +
+                ") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         final String checkDublicate = "SELECT player_uuid, " +
                 "chest_world, " +
                 "chest_x, " +
@@ -473,6 +475,7 @@ public class ChestDataRepository {
             ps.setString(22, chest.getWorldName());
             ps.setInt(23, chest.getXpStored());
             ps.setBytes(24, ItemBytes.toBytesList(chest.getInventory()));
+            ps.setString(25, chest.getId().toString());
 
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -566,7 +569,7 @@ public class ChestDataRepository {
                 rs.getFloat("holo_pitch")
         );
 
-        return new ChestData(
+        ChestData chest = new ChestData(
                 ItemBytes.fromBytesList(rs.getBytes("inventory")),
                 chestLoc,
                 rs.getString("player_name"),
@@ -582,11 +585,16 @@ public class ChestDataRepository {
                 rs.getString("world_name"),
                 rs.getInt("xp_stored")
         );
+        chest.loadPersistentId(UUID.fromString(rs.getString("chest_uuid")));
+        return chest;
     }
 
     private static void ckeckIfUpdated() {
-        try (Connection connection = db.connection();
-             Statement st = connection.createStatement()) {
+        // initTable still owns a statement on this shared connection.
+        // Closing it here used to skip the migration callback silently in SQLExecutor.
+        try {
+            Connection connection = db.connection();
+            try (Statement st = connection.createStatement()) {
             final List<String> columns = new ArrayList<>();
 
             try (ResultSet rs = st.executeQuery("PRAGMA index_info('idx_chest_location')")) {
@@ -619,11 +627,26 @@ public class ChestDataRepository {
                 }
             }
 
+            if (!tableColumns.contains("chest_uuid")) {
+                st.executeUpdate("ALTER TABLE chest_data ADD COLUMN chest_uuid TEXT");
+            }
+            List<Long> missingIds = new ArrayList<>();
+            try (ResultSet rows = st.executeQuery("SELECT id FROM chest_data WHERE chest_uuid IS NULL")) {
+                while (rows.next()) missingIds.add(rows.getLong(1));
+            }
+            try (PreparedStatement fill = connection.prepareStatement("UPDATE chest_data SET chest_uuid=? WHERE id=?")) {
+                for (Long id : missingIds) {
+                    fill.setString(1, UUID.randomUUID().toString()); fill.setLong(2, id); fill.addBatch();
+                }
+                fill.executeBatch();
+            }
+            st.executeUpdate("CREATE UNIQUE INDEX IF NOT EXISTS idx_chest_uuid ON chest_data(chest_uuid)");
             if (!tableColumns.contains("killer_uuid")) {
                 st.executeUpdate("ALTER TABLE chest_data ADD COLUMN killer_uuid TEXT");
             }
             if (!tableColumns.contains("holographic_status_id")) {
                 st.executeUpdate("ALTER TABLE chest_data ADD COLUMN holographic_status_id TEXT");
+            }
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);

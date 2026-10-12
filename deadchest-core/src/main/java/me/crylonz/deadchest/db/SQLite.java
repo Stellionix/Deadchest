@@ -28,7 +28,7 @@ public class SQLite {
 
             try (Statement st = conn.createStatement()) {
                 st.execute("PRAGMA journal_mode=WAL");
-                st.execute("PRAGMA synchronous=NORMAL");
+                st.execute("PRAGMA synchronous=FULL");
                 st.execute("PRAGMA foreign_keys=ON");
             }
 

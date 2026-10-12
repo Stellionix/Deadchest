@@ -81,7 +81,7 @@ public class ClickListener implements Listener {
         UUID playerUUID = player.getUniqueId();
         boolean playerHasPermission = player.hasPermission(Permission.CHESTPASS.label);
         final ChestData chestData = DeadChestLoader.getChestData(block.getLocation());
-        if (chestData == null) return;
+        if (chestData == null || chestData.isTransitioning()) return;
         if (canOpenChest(chestData, player, playerUUID, playerHasPermission)) {
             processChestPickup(e, chestData, block, player);
         } else {
@@ -92,7 +92,7 @@ public class ClickListener implements Listener {
     /**
      * Checks if the player has the right to open the chest
      */
-    private boolean canOpenChest(ChestData cd, Player player, UUID playerUUID, boolean hasPerm) {
+    public static boolean canOpenChest(ChestData cd, Player player, UUID playerUUID, boolean hasPerm) {
         if (isPublicLootPhase(cd, new Date())) return isPublicLootAccessible(cd, playerUUID);
         if (!config.getBoolean(ConfigKey.ONLY_OWNER_CAN_OPEN_CHEST)) return true;
         if (playerUUID.equals(cd.getPlayerUUID())) return true;
@@ -100,7 +100,7 @@ public class ClickListener implements Listener {
         return false;
     }
 
-    private boolean isPublicLootAccessible(ChestData chestData, UUID playerUUID) {
+    private static boolean isPublicLootAccessible(ChestData chestData, UUID playerUUID) {
         if (chestData == null || playerUUID == null || !isPublicLootPhase(chestData, new Date())) {
             return false;
         }
@@ -141,8 +141,32 @@ public class ClickListener implements Listener {
             return;
         }
 
-        restoreOrDropInventory(cd, player, block);
-        cleanupChest(cd, block, player);
+        if (config.getInt(ConfigKey.DROP_MODE) == 1) {
+            me.crylonz.deadchest.PlayerTransfers.active().recover(cd, player).thenAccept(done -> {
+                if (!done) return;
+                DeadChestLoader.getSchedulerAdapter().runAtLocation(block.getLocation(), () -> playPickupAnimation(block));
+                DeadChestLoader.getSchedulerAdapter().runForEntity(player, () -> playPickupSound(player.getLocation().getBlock(), player));
+            });
+            return;
+        }
+
+        me.crylonz.deadchest.ChestLifecycle.transitionAsync(cd, me.crylonz.deadchest.ChestLifecycle.Outcome.RECOVERED,
+                player.getUniqueId().toString(), () -> {
+                    me.crylonz.deadchest.RecoveryJournal.active().begin(cd, "RECOVER", player.getUniqueId());
+                    java.util.concurrent.CompletableFuture<Void> delivered = new java.util.concurrent.CompletableFuture<>();
+                    block.setType(Material.AIR);
+                    DeadChestLoader.getChestDataCache().removeChestData(cd);
+                    playPickupAnimation(block);
+                    DeadChestLoader.getSchedulerAdapter().executeForEntity(player, () -> {
+                        try {
+                            if (!player.isOnline()) throw new IllegalStateException("Player disconnected");
+                            restoreOrDropInventory(cd, player, player.getLocation().getBlock());
+                            player.saveData();
+                            playPickupSound(player.getLocation().getBlock(), player); delivered.complete(null);
+                        } catch (Exception ex) { delivered.completeExceptionally(ex); }
+                    });
+                    return delivered;
+                });
     }
 
     /**
@@ -252,7 +276,7 @@ public class ClickListener implements Listener {
             } catch (IllegalArgumentException ignored) {
             }
         }
-        return Particle.TOTEM;
+        try { return Particle.valueOf("TOTEM_OF_UNDYING"); } catch (IllegalArgumentException ex) { return Particle.valueOf("TOTEM"); }
     }
 
     private void playPickupSound(Block block, Player player) {
@@ -269,8 +293,8 @@ public class ClickListener implements Listener {
     private Sound resolveSound(String soundName) {
         if (soundName != null && !soundName.trim().isEmpty()) {
             try {
-                return Sound.valueOf(soundName.trim().toUpperCase());
-            } catch (IllegalArgumentException ignored) {
+                return (Sound) Sound.class.getMethod("valueOf", String.class).invoke(null, soundName.trim().toUpperCase());
+            } catch (ReflectiveOperationException | IllegalArgumentException ignored) {
             }
         }
         return Sound.ENTITY_EXPERIENCE_ORB_PICKUP;

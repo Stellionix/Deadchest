@@ -49,7 +49,7 @@ public class PlayerDeathListener implements Listener {
         if (playerOrWorldDisallowsGeneration(player)) return;
         if (pvpKeepInventoryCase(event, player)) return;
 
-        if (player.getInventory().isEmpty()) {
+        if (java.util.Arrays.stream(player.getInventory().getContents()).noneMatch(item -> item != null && !me.crylonz.deadchest.utils.LegacySupport.isAir(item.getType()))) {
             generateLog("Player [" + player.getName() + "] died without inventory : No Deadchest generated");
             return;
         }
@@ -94,14 +94,32 @@ public class PlayerDeathListener implements Listener {
         }
 
         // 7) Chest type + holograms
+        me.crylonz.deadchest.PlayerTransfers transfers = me.crylonz.deadchest.PlayerTransfers.active();
+        if (!transfers.isReady()) {
+            event.setKeepInventory(true); event.setKeepLevel(true); event.getDrops().clear(); return;
+        }
         generateDeadChest(block, player);
         ArmorStand[] holos = createHolograms(block, event.getEntity().getDisplayName());
 
         // 8) Building & saving the DeadChest (ChestData), then restoring player inventory
-        buildAndSaveChestData(player, block, holos[HOLO_TIME], holos[HOLO_NAME], holos[HOLO_STATUS], itemsToStore);
+        ChestData created = buildChestData(player, block, holos[HOLO_TIME], holos[HOLO_NAME], holos[HOLO_STATUS], itemsToStore);
+        java.util.Properties operation = transfers.prepareCreation(created, player);
+        created.beginCreation();
 
         // 9) Clean up drops & remove remaining items on player side
-        clearEventDropsAndPlayerInventory(event, player);
+        try {
+            me.crylonz.deadchest.TransferReceipt.apply(player, operation.getProperty("id"), () -> {
+                clearEventDropsAndPlayerInventory(event, player);
+                if (config.getBoolean(ConfigKey.STORE_XP)) {
+                    player.setExp(0); player.setLevel(0); player.setTotalExperience(0);
+                }
+            });
+            DeadChestLoader.getChestDataCache().addChestData(created);
+            transfers.creationSaved(operation, created, player);
+        } catch (RuntimeException ex) {
+            event.setKeepInventory(true); event.setKeepLevel(true);
+            transfers.failed(operation, ex); throw ex;
+        }
 
         // 10) Position message (optional), persistence & logs
         maybeSendPosition(player, block);
@@ -234,12 +252,12 @@ public class PlayerDeathListener implements Listener {
         if (type == Material.DARK_OAK_DOOR ||
                 type == Material.ACACIA_DOOR ||
                 type == Material.BIRCH_DOOR ||
-                (!Utils.isBefore1_16() && type == Material.CRIMSON_DOOR) ||
+                (!Utils.isBefore1_16() && type == Material.valueOf("CRIMSON_DOOR")) ||
                 type == Material.IRON_DOOR ||
                 type == Material.JUNGLE_DOOR ||
                 type == Material.OAK_DOOR ||
                 type == Material.SPRUCE_DOOR ||
-                (!Utils.isBefore1_16() && type == Material.WARPED_DOOR) ||
+                (!Utils.isBefore1_16() && type == Material.valueOf("WARPED_DOOR")) ||
                 type == Material.VINE ||
                 type == Material.LADDER) {
 
@@ -267,7 +285,7 @@ public class PlayerDeathListener implements Listener {
         Location groundLocation = loc.clone();
         groundLocation.setY(groundLocation.getY() - 1);
         if (isBefore1_17() && world.getBlockAt(groundLocation).getType() == Material.valueOf("GRASS_PATH")
-                || !isBefore1_17() && world.getBlockAt(groundLocation).getType() == Material.DIRT_PATH
+                || !isBefore1_17() && world.getBlockAt(groundLocation).getType() == Material.valueOf("DIRT_PATH")
                 || world.getBlockAt(groundLocation).getType() == Material.FARMLAND) {
             loc.setY(loc.getY() + 1);
         }
@@ -338,7 +356,7 @@ public class PlayerDeathListener implements Listener {
                     if (newDamage > itemStack.getType().getMaxDurability()) {
                         inv.remove(itemStack);
                     } else {
-                        itemStack.setItemMeta(itemData);
+                        itemStack.setItemMeta((org.bukkit.inventory.meta.ItemMeta) itemData);
                     }
                 });
     }
@@ -355,12 +373,12 @@ public class PlayerDeathListener implements Listener {
         return itemsToStore;
     }
 
-    private void buildAndSaveChestData(Player p, Block b, ArmorStand holoTime, ArmorStand holoName, ArmorStand holoStatus, ItemStack[] itemsToStore) {
+    private ChestData buildChestData(Player p, Block b, ArmorStand holoTime, ArmorStand holoName, ArmorStand holoStatus, ItemStack[] itemsToStore) {
         PlayerInventory inv = p.getInventory();
         ItemStack[] snapshot = inv.getContents();
         inv.setContents(itemsToStore);
-        DeadChestLoader.getChestDataCache().addChestData(cerateChestData(p, b, holoTime, holoName, holoStatus, inv));
-        inv.setContents(snapshot);
+        try { return cerateChestData(p, b, holoTime, holoName, holoStatus, inv); }
+        finally { inv.setContents(snapshot); }
     }
 
     private static ChestData cerateChestData(final Player p, final Block b, final ArmorStand holoTime, final ArmorStand holoName, final ArmorStand holoStatus, final PlayerInventory inv) {
@@ -374,12 +392,6 @@ public class PlayerDeathListener implements Listener {
                 getTotalExperienceToStore(p)
         );
         chestData.setHolographicStatusId(holoStatus == null ? null : holoStatus.getUniqueId());
-        chestData.save(containsChestOnLoc -> {
-            if (containsChestOnLoc){
-                generateLog("Could not generate deadchest, as dublicate exist in database on same location [" + p.getName() + "] in " + b.getWorld().getName() +
-                        " at X:" + b.getX() + " Y:" + b.getY() + " Z:" + b.getZ());
-            }
-        });
         return chestData;
     }
 
@@ -395,7 +407,7 @@ public class PlayerDeathListener implements Listener {
     }
 
     private boolean isIgnoredItem(ItemStack item) {
-        if (item == null || item.getType().isAir()) {
+        if (item == null || me.crylonz.deadchest.utils.LegacySupport.isAir(item.getType())) {
             return false;
         }
 

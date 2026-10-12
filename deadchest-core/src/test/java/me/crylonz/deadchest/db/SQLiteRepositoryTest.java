@@ -75,6 +75,18 @@ class SQLiteRepositoryTest {
         List<ChestData> loaded = ChestDataRepository.findAll();
         assertEquals(1, loaded.size());
         assertChestEquivalent(expected, loaded.get(0));
+        assertEquals(expected.getId(), loaded.get(0).getId());
+    }
+
+    @Test
+    void migrationCompletesCallbackAndKeepsPersistentIdentity() {
+        ChestData chest = chestDataAt(19, Material.DIAMOND, 1, false, 1);
+        ChestDataRepository.save(chest);
+        java.util.concurrent.atomic.AtomicBoolean called = new java.util.concurrent.atomic.AtomicBoolean();
+        ChestDataRepository.initTable(() -> called.set(true));
+        awaitAsyncDb();
+        assertTrue(called.get(), "Migration callback must not be skipped by a closed connection");
+        assertEquals(chest.getId(), ChestDataRepository.findAll().get(0).getId());
     }
 
     @Test
