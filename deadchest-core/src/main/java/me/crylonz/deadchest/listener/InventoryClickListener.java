@@ -17,21 +17,20 @@ public class InventoryClickListener implements Listener {
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onInventoryClick(InventoryClickEvent event) {
-        if (!isDeadchestGui(event.getView())) return;
+        if (!isDeadchestGui(event.getInventory())) return;
         if (!(event.getWhoClicked() instanceof Player)) return;
 
         event.setCancelled(true);
 
-        final InventoryView view = event.getView();
         final Inventory clickedInv = event.getClickedInventory();
         final int slot = event.getSlot();
 
         if (clickedInv == null) return;
 
         // first case : removing item from ignore list
-        if (clickedInv == view.getTopInventory()) {
+        if (clickedInv == event.getInventory()) {
             final ItemStack clicked = event.getCurrentItem();
-            if (clicked == null || clicked.getType().isAir()) return;
+            if (clicked == null || me.crylonz.deadchest.utils.LegacySupport.isAir(clicked.getType())) return;
 
             getSchedulerAdapter().runForEntity(event.getWhoClicked(), () -> {
                 if (clicked.getAmount() <= 1) {
@@ -47,9 +46,9 @@ public class InventoryClickListener implements Listener {
         }
 
         // second case : adding item to ignore list
-        if (clickedInv == view.getBottomInventory()) {
+        if (clickedInv == event.getWhoClicked().getInventory()) {
             final ItemStack src = event.getCurrentItem();
-            if (src == null || src.getType().isAir()) return;
+            if (src == null || me.crylonz.deadchest.utils.LegacySupport.isAir(src.getType())) return;
 
             if (!containsSimilarIgnoreItem(src)) {
                 getSchedulerAdapter().runForEntity(event.getWhoClicked(), () -> {
@@ -63,12 +62,12 @@ public class InventoryClickListener implements Listener {
     }
 
 
-    private boolean isDeadchestGui(InventoryView view) {
-        return view.getTopInventory().getHolder() instanceof IgnoreInventoryHolder;
+    private boolean isDeadchestGui(Inventory inventory) {
+        return inventory.getHolder() instanceof IgnoreInventoryHolder;
     }
 
     private boolean containsSimilarIgnoreItem(ItemStack candidate) {
-        if (ignoreList == null || candidate == null || candidate.getType().isAir()) {
+        if (ignoreList == null || candidate == null || me.crylonz.deadchest.utils.LegacySupport.isAir(candidate.getType())) {
             return false;
         }
 

@@ -91,7 +91,7 @@ public class IgnoreItemListRepository {
              ResultSet result = request.executeQuery()) {
             while (result.next()) {
                 ItemStack item = ItemBytes.fromBytes(result.getBytes("data"));
-                if (item != null && !item.getType().isAir()) {
+                if (item != null && !me.crylonz.deadchest.utils.LegacySupport.isAir(item.getType())) {
                     items.add(item);
                 }
             }

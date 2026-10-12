@@ -16,7 +16,7 @@ import org.bukkit.metadata.FixedMetadataValue;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.StandardOpenOption;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -29,13 +29,14 @@ public class Utils {
 
 
     public static void generateLog(String message) {
-        File log = new File("plugins/DeadChest/deadchest.log");
+        File log = new File(DeadChestLoader.plugin.getDataFolder(), "deadchest.log");
         try {
-            log.createNewFile();
+            Files.createDirectories(log.toPath().getParent());
             SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
             Date date = new Date(System.currentTimeMillis());
             String finalMsg = "[" + formatter.format(date) + "] " + message + "\n";
-            Files.write(Paths.get("plugins/DeadChest/deadchest.log"), finalMsg.getBytes(), StandardOpenOption.APPEND);
+            Files.write(log.toPath(), finalMsg.getBytes(StandardCharsets.UTF_8),
+                    StandardOpenOption.CREATE, StandardOpenOption.APPEND);
         } catch (IOException e) {
             DeadChestLoader.log.warning("Can't write log for Deadchest : " + e);
         }
@@ -122,7 +123,8 @@ public class Utils {
                 skull.update();
                 break;
             case 3:
-                block.setType(Material.BARREL);
+                Material barrel = Material.getMaterial("BARREL");
+                block.setType(barrel == null ? Material.CHEST : barrel);
                 break;
             case 4:
                 block.setType(Material.SHULKER_BOX);
