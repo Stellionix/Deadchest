@@ -34,6 +34,18 @@ class DeadChestConfigMigrationTest {
     }
 
     @Test
+    void replacesLegacyOverflowModeWithPartialInventoryMode() {
+        fileConfiguration.set("chest.recovery-mode", "inventory-then-ground");
+        DeadChestConfig config = new DeadChestConfig(plugin);
+        config.register(ConfigKey.DROP_MODE);
+        assertEquals("inventory", config.getString(ConfigKey.DROP_MODE));
+        assertEquals(1, config.getInt(ConfigKey.DROP_MODE));
+        assertEquals("inventory", fileConfiguration.getString("chest.recovery-mode"));
+        assertEquals(Arrays.asList("inventory", "ground-drop"), ConfigKey.DROP_MODE.suggestedValues());
+        verify(plugin).saveConfig();
+    }
+
+    @Test
     void readsLegacyV1KeysWithV2ConfigPaths() {
         fileConfiguration.set("auto-update", false);
         fileConfiguration.set("OnlyOwnerCanOpenDeadChest", false);

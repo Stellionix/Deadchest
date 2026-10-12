@@ -18,11 +18,8 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.PlayerInventory;
 
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.UUID;
 
 import static me.crylonz.deadchest.DeadChestLoader.config;
@@ -163,7 +160,7 @@ public class ClickListener implements Listener {
                     DeadChestLoader.getSchedulerAdapter().executeForEntity(player, () -> {
                         try {
                             if (!player.isOnline()) throw new IllegalStateException("Player disconnected");
-                            restoreOrDropInventory(cd, player, player.getLocation().getBlock());
+                            dropInventory(cd, player.getLocation().getBlock());
                             player.saveData();
                             playPickupSound(player.getLocation().getBlock(), player); delivered.complete(null);
                         } catch (Exception ex) { delivered.completeExceptionally(ex); }
@@ -183,51 +180,6 @@ public class ClickListener implements Listener {
             return false;
         }
         return true;
-    }
-
-    /**
-     * Restore inventory or drop items depending on the mode
-     */
-    private void restoreOrDropInventory(ChestData cd, Player player, Block block) {
-        if (config.getInt(ConfigKey.DROP_MODE) == 1) {
-            restoreInventory(cd, player, block.getWorld());
-        } else {
-            dropInventory(cd, block);
-        }
-    }
-
-    /**
-     * Restores inventory directly to the player
-     */
-    private void restoreInventory(ChestData cd, Player player, World world) {
-        PlayerInventory playerInventory = player.getInventory();
-        player.giveExp(cd.getXpStored());
-
-        ItemStack[] originalContents = cd.getInventory().toArray(new ItemStack[0]);
-        List<ItemStack> slotReplacedItems = new ArrayList<>();
-
-        // First pass: Restore items to their original inventory positions
-        for (int i = 0; i < originalContents.length; i++) {
-            ItemStack item = originalContents[i];
-            if (item != null) {
-                if (i < playerInventory.getSize()
-                        && (playerInventory.getItem(i) == null || playerInventory.getItem(i).getType() == Material.AIR)) {
-                    playerInventory.setItem(i, item);
-                } else {
-                    slotReplacedItems.add(item);
-                }
-            }
-        }
-
-        // Second pass: Restore items that would have replaced existing items
-        // into empty slots or drop them if there are no available slots.
-        for (ItemStack i : slotReplacedItems) {
-            if (playerInventory.firstEmpty() != -1) {
-                playerInventory.addItem(i);
-            } else {
-                world.dropItemNaturally(player.getLocation(), i);
-            }
-        }
     }
 
     /**

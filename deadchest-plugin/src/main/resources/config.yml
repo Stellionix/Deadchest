@@ -54,9 +54,9 @@ chest:
   max-per-player: 15
 
   # Item recovery mode when claiming a chest:
-  # - inventory-then-ground = fill inventory first, drop overflow
+  # - inventory = take what fits; the remainder stays in the chest until the next click
   # - ground-drop           = drop everything on the ground
-  recovery-mode: inventory-then-ground
+  recovery-mode: inventory
 
   # Block type used to represent a DeadChest:
   # chest | player-head | barrel | shulker-box | ender-chest

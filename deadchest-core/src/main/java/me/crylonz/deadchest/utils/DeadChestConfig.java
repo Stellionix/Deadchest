@@ -27,6 +27,11 @@ public class DeadChestConfig {
 
     public void register(String key, Object defaultValue) {
         configData.put(key, normalizeValue(resolveFromConfig(key), defaultValue, ConfigKey.fromCanonicalPath(key)));
+        if (ConfigKey.DROP_MODE.toString().equals(key)
+                && "inventory-then-ground".equalsIgnoreCase(plugin.getConfig().getString(key))) {
+            plugin.getConfig().set(key, "inventory");
+            plugin.saveConfig();
+        }
 
     }
 
@@ -202,7 +207,7 @@ public class DeadChestConfig {
     private String normalizeDropMode(Object value, Object defaultValue) {
         int mode = toInt(value, ConfigKey.DROP_MODE);
         if (mode == 1) {
-            return "inventory-then-ground";
+            return "inventory";
         }
         if (mode == 2) {
             return "ground-drop";

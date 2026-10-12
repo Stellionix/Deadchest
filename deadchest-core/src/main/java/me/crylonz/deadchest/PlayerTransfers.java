@@ -1,6 +1,7 @@
 package me.crylonz.deadchest;
 
 import me.crylonz.deadchest.utils.Utils;
+import me.crylonz.deadchest.utils.ItemBytes;
 import me.crylonz.deadchest.db.ChestDataRepository;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
@@ -22,6 +23,14 @@ public final class PlayerTransfers implements Listener {
     private final Map<String,Properties> pending = new ConcurrentHashMap<>();
     private final Set<String> busy = ConcurrentHashMap.newKeySet();
     private final Map<String,CompletableFuture<Boolean>> waiting = new ConcurrentHashMap<>();
+    private final Map<UUID, PendingClick> clicks = new ConcurrentHashMap<>();
+
+    private static final class PendingClick {
+        final ChestData chest;
+        final UUID player;
+        final CompletableFuture<Boolean> result = new CompletableFuture<>();
+        PendingClick(ChestData chest, Player player) { this.chest=chest; this.player=player.getUniqueId(); }
+    }
 
     private PlayerTransfers(Path path) {
         this.path=path; store=new TransferStore(path);
@@ -38,7 +47,8 @@ public final class PlayerTransfers implements Listener {
     public boolean isReady() { return ready; }
     public static boolean blocked(UUID chest) {
         PlayerTransfers current=instance;
-        return chest!=null && current!=null && current.pending.values().stream().anyMatch(p->chest.toString().equals(p.getProperty("chest")));
+        return chest!=null && current!=null && (current.clicks.containsKey(chest)
+                || current.pending.values().stream().anyMatch(p->chest.toString().equals(p.getProperty("chest"))));
     }
 
     private synchronized Properties prepare(ChestData chest, String kind, UUID recipient) {
@@ -60,10 +70,48 @@ public final class PlayerTransfers implements Listener {
 
     public CompletableFuture<Boolean> recover(ChestData chest, Player player) {
         if (!chest.claimTransition()) return CompletableFuture.completedFuture(false);
-        Properties operation;
-        try { operation=prepare(chest,"RECOVER",player.getUniqueId()); }
-        catch (RuntimeException e) { chest.cancelUnpreparedTransition(); DeadChestLoader.log.severe("Cannot prepare recovery: "+e); return CompletableFuture.completedFuture(false); }
-        return dispatch(operation,player);
+        PendingClick click = new PendingClick(chest, player);
+        CompletableFuture<Boolean> result = click.result;
+        clicks.put(chest.getId(), click);
+        // Packing, durable intent and player save execute together on the player's owning thread.
+        DeadChestLoader.getSchedulerAdapter().runForEntity(player, () -> {
+            if (clicks.get(chest.getId()) != click) return;
+            Properties operation = null;
+            try {
+                if (!player.isOnline() || player.isDead()) { unlock(chest, result); return; }
+                InventoryTransfer.Packing packing = InventoryTransfer.partial(player.getInventory().getContents(), chest.getInventory(), true);
+                if (packing.moved == 0 && (packing.hasRemainder() || chest.getXpStored() == 0)) {
+                    unlock(chest, result); return;
+                }
+                operation = TransferSnapshot.encode(chest, "PICKUP", player.getUniqueId());
+                operation.setProperty("remaining", Base64.getEncoder().encodeToString(ItemBytes.toBytesList(packing.remaining)));
+                store.insert(operation);
+                String id = operation.getProperty("id");
+                busy.add(id); pending.put(id, operation);
+                clicks.remove(chest.getId(), click);
+                TransferReceipt.apply(player, id, () -> {
+                    player.getInventory().setContents(packing.inventory);
+                    player.giveExp(chest.getXpStored());
+                });
+                apply(operation, player, result);
+            } catch (Throwable error) {
+                if (operation != null && pending.containsKey(operation.getProperty("id"))) {
+                    failed(operation, error); result.completeExceptionally(error);
+                } else {
+                    DeadChestLoader.log.log(java.util.logging.Level.WARNING,"Cannot prepare chest pickup",error);
+                    unlock(chest, result);
+                }
+            } finally {
+                clicks.remove(chest.getId(), click);
+            }
+        });
+        return result;
+    }
+
+    private void unlock(ChestData chest, CompletableFuture<Boolean> result) {
+        DeadChestLoader.getSchedulerAdapter().runAtLocation(chest.getChestLocation(), () -> {
+            chest.cancelUnpreparedTransition(); result.complete(false);
+        });
     }
     public CompletableFuture<Boolean> restore(ChestData chest, Player player) {
         if (blocked(chest.getId())) return CompletableFuture.completedFuture(false);
@@ -84,6 +132,16 @@ public final class PlayerTransfers implements Listener {
             if (!player.isOnline() || player.isDead()) { busy.remove(id); result.complete(false); return; }
             ChestData chest=TransferSnapshot.decode(operation);
             boolean received=TransferReceipt.present(player,id);
+            if ("PICKUP".equals(operation.getProperty("kind"))) {
+                // After a crash, settle the exact saved remainder or roll back an unapplied click.
+                // Never deliver more items merely because the player later frees inventory space.
+                if (received) {
+                    chest.setInventory(ItemBytes.fromBytesList(Base64.getDecoder().decode(operation.getProperty("remaining"))));
+                    chest.setXpStored(0);
+                }
+                finish(operation,chest,received,player).whenComplete((ok,error)->complete(result,ok,error));
+                return;
+            }
             if ("CREATE".equals(operation.getProperty("kind"))) {
                 // No receipt: Minecraft still holds the pre-death inventory. Roll back only the chest.
                 finish(operation,chest,received,player).whenComplete((ok,error)->complete(result,ok,error));
@@ -107,9 +165,19 @@ public final class PlayerTransfers implements Listener {
         CompletableFuture<Boolean> result=new CompletableFuture<>();
         String kind=operation.getProperty("kind"), id=operation.getProperty("id");
         boolean create="CREATE".equals(kind) && received;
+        boolean keepPickup = "PICKUP".equals(kind) && (!received || chest.getInventory().stream()
+                .anyMatch(i -> i != null && i.getType() != Material.AIR && i.getAmount() > 0));
         DeadChestLoader.sqlExecutor.runAsync(()->{
             try {
-                if (create) {
+                if (keepPickup) {
+                    try (PreparedStatement s = DeadChestLoader.db.connection().prepareStatement(
+                            "UPDATE chest_data SET inventory=?,xp_stored=? WHERE chest_uuid=?")) {
+                        s.setBytes(1,ItemBytes.toBytesList(chest.getInventory())); s.setInt(2,chest.getXpStored());
+                        s.setString(3,chest.getId().toString());
+                        if (s.executeUpdate()==0 && ChestDataRepository.save(chest))
+                            throw new IllegalStateException("Another chest occupies this location");
+                    }
+                } else if (create) {
                     boolean exists;
                     try (PreparedStatement s=DeadChestLoader.db.connection().prepareStatement("SELECT 1 FROM chest_data WHERE chest_uuid=?")) {
                         s.setString(1,chest.getId().toString()); try(ResultSet r=s.executeQuery()){exists=r.next();}
@@ -120,7 +188,7 @@ public final class PlayerTransfers implements Listener {
                         s.setString(1,chest.getId().toString()); s.executeUpdate();
                     }
                 }
-                String outcome=create ? "ACTIVE" : "CREATE".equals(kind) ? "DELETED" : "RESTORE".equals(kind) ? "RESTORED" : "RECOVERED";
+                String outcome=(create || keepPickup) ? "ACTIVE" : "CREATE".equals(kind) ? "DELETED" : "RESTORE".equals(kind) ? "RESTORED" : "RECOVERED";
                 ChestLifecycle.reconcile(chest,outcome,operation.getProperty("recipient")).whenComplete((v,error)->{
                     if (error!=null) { failed(operation,error); result.completeExceptionally(error); return; }
                     DeadChestLoader.getSchedulerAdapter().runAtLocation(chest.getChestLocation(),()->{
@@ -131,7 +199,7 @@ public final class PlayerTransfers implements Listener {
                                 if (create) {
                                     if (chest.getChestLocation().getBlock().getType()==Material.AIR)
                                         chest.getChestLocation().getBlock().setType(Material.valueOf(operation.getProperty("material","CHEST")));
-                                } else {
+                                } else if (!keepPickup) {
                                     if (Utils.isGraveBlock(chest.getChestLocation().getBlock().getType()))
                                         chest.getChestLocation().getBlock().setType(Material.AIR);
                                     chest.removeArmorStand();
@@ -139,7 +207,7 @@ public final class PlayerTransfers implements Listener {
                             }
                             store.complete(id);
                             pending.remove(id); busy.remove(id);
-                            if (create) {
+                            if (create || keepPickup) {
                                 chest.creationSaved(); DeadChestLoader.getChestDataCache().addChestData(chest);
                             } else if (!"RESTORE".equals(kind)) DeadChestLoader.getChestDataCache().forgetChestData(chest);
                             result.complete(true);
@@ -161,6 +229,10 @@ public final class PlayerTransfers implements Listener {
             apply(p,player,new CompletableFuture<>());
     }
     public void tick() {
+        for (PendingClick click : clicks.values()) {
+            if (Bukkit.getPlayer(click.player)==null && clicks.remove(click.chest.getId(),click))
+                unlock(click.chest,click.result);
+        }
         for(Properties p:pending.values()) if(Bukkit.getPlayer(UUID.fromString(p.getProperty("recipient")))==null) retired(p);
         for (Player player:Bukkit.getOnlinePlayers()) DeadChestLoader.getSchedulerAdapter().runForEntity(player,()->resume(player));
     }

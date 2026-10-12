@@ -144,7 +144,7 @@ public enum ConfigKey {
             case PICKUP_SOUND_PITCH:
                 return 1.0D;
             case DROP_MODE:
-                return "inventory-then-ground";
+                return "inventory";
             case DROP_BLOCK:
                 return "chest";
             case EFFECT_ANIMATION_STYLE:
@@ -260,7 +260,7 @@ public enum ConfigKey {
             case PICKUP_SOUND_ENABLED:
                 return Arrays.asList("true", "false");
             case DROP_MODE:
-                return Arrays.asList("inventory-then-ground", "ground-drop");
+                return Arrays.asList("inventory", "ground-drop");
             case DROP_BLOCK:
                 return Arrays.asList("chest", "player-head", "barrel", "shulker-box", "ender-chest");
             case EFFECT_ANIMATION_STYLE:

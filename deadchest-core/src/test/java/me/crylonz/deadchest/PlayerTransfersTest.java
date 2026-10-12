@@ -3,6 +3,8 @@ package me.crylonz.deadchest;
 import be.seeseemelk.mockbukkit.*;
 import be.seeseemelk.mockbukkit.entity.PlayerMock;
 import me.crylonz.deadchest.db.*;
+import me.crylonz.deadchest.utils.ItemBytes;
+import java.util.concurrent.CompletableFuture;
 import org.bukkit.*;
 import org.bukkit.inventory.ItemStack;
 import org.junit.jupiter.api.*;
@@ -83,6 +85,73 @@ class PlayerTransfersTest {
         restartAndResume(); assertEquals(1,store().pending().size()); assertEquals(0,diamonds()); assertEquals(0,player.getTotalExperience());
         player.getInventory().setItem(0,null); PlayerTransfers.active().resume(player); server.getScheduler().performTicks(8);
         assertEquals(17,diamonds()); assertEquals(100,player.getTotalExperience()); assertTrue(store().pending().isEmpty());
+    }
+
+    void fillWithRoomForFourDiamonds() {
+        for(int i=0;i<36;i++) player.getInventory().setItem(i,new ItemStack(Material.STONE,64));
+        player.getInventory().setItem(0,new ItemStack(Material.DIAMOND,60));
+    }
+    @Test void partialPickupKeepsRemainderUntilAnotherClickAndGivesXpOnce() {
+        fillWithRoomForFourDiamonds();
+        ChestData c=chest(); ChestDataRepository.save(c); DeadChestLoader.getChestDataCache().addChestData(c);
+        PlayerTransfers.active().recover(c,player); server.getScheduler().performTicks(8);
+        assertEquals(64,diamonds()); assertEquals(100,player.getTotalExperience());
+        ChestData remainder=DeadChestLoader.getChestData(c.getChestLocation());
+        assertNotNull(remainder); assertEquals(13,remainder.getInventory().get(0).getAmount());
+        assertEquals(0,remainder.getXpStored()); assertFalse(remainder.isTransitioning());
+        assertEquals(13,ChestDataRepository.findAll().get(0).getInventory().get(0).getAmount());
+        assertEquals(Material.CHEST,c.getChestLocation().getBlock().getType()); assertTrue(store().pending().isEmpty());
+        player.getInventory().setItem(1,null);
+        restartAndResume(); assertEquals(64,diamonds()); // Free space never triggers another pickup.
+        PlayerTransfers.active().recover(remainder,player); server.getScheduler().performTicks(8);
+        assertEquals(77,diamonds()); assertEquals(100,player.getTotalExperience());
+        assertTrue(ChestDataRepository.findAll().isEmpty()); assertEquals(Material.AIR,c.getChestLocation().getBlock().getType());
+    }
+    @Test void fullPickupLeavesChestUnlockedWithoutAnyPendingDelivery() {
+        for(int i=0;i<36;i++) player.getInventory().setItem(i,new ItemStack(Material.STONE,64));
+        ChestData c=chest(); ChestDataRepository.save(c); DeadChestLoader.getChestDataCache().addChestData(c);
+        PlayerTransfers.active().recover(c,player); server.getScheduler().performTicks(8);
+        assertEquals(0,diamonds()); assertEquals(0,player.getTotalExperience()); assertFalse(c.isTransitioning());
+        assertTrue(store().pending().isEmpty()); assertEquals(17,ChestDataRepository.findAll().get(0).getInventory().get(0).getAmount());
+        player.getInventory().setItem(0,null); restartAndResume(); assertEquals(0,diamonds());
+    }
+    @Test void unappliedPartialClickRollsBackInsteadOfDeliveringAfterRestart() {
+        ChestData c=chest(); ChestDataRepository.save(c);
+        Properties op=TransferSnapshot.encode(c,"PICKUP",player.getUniqueId());
+        op.setProperty("remaining", Base64.getEncoder().encodeToString(ItemBytes.toBytesList(Arrays.asList(new ItemStack(Material.DIAMOND,13)))));
+        store().insert(op); restartAndResume();
+        assertEquals(0,diamonds()); assertEquals(0,player.getTotalExperience()); assertTrue(store().pending().isEmpty());
+        assertEquals(17,ChestDataRepository.findAll().get(0).getInventory().get(0).getAmount());
+        assertEquals(100,ChestDataRepository.findAll().get(0).getXpStored());
+    }
+    @Test void savedPartialReceiptReplaysRemainderWithoutDuplicatingItemsOrXp() {
+        fillWithRoomForFourDiamonds();
+        ChestLifecycle.Observer observer=mock(ChestLifecycle.Observer.class); ChestLifecycle.observe(observer);
+        CompletableFuture<Void> failure=new CompletableFuture<>();
+        failure.completeExceptionally(new IllegalStateException("crash before history commit"));
+        when(observer.reconcile(any(),anyString(),anyString())).thenReturn(failure);
+        ChestData c=chest(); ChestDataRepository.save(c); DeadChestLoader.getChestDataCache().addChestData(c);
+        PlayerTransfers.active().recover(c,player); server.getScheduler().performTicks(8);
+        assertEquals(64,diamonds()); assertEquals(1,store().pending().size());
+        when(observer.reconcile(any(),anyString(),anyString())).thenReturn(CompletableFuture.completedFuture(null));
+        restartAndResume(); restartAndResume();
+        assertEquals(64,diamonds()); assertEquals(100,player.getTotalExperience()); assertTrue(store().pending().isEmpty());
+        assertEquals(13,ChestDataRepository.findAll().get(0).getInventory().get(0).getAmount());
+        assertEquals(0,ChestDataRepository.findAll().get(0).getXpStored());
+    }
+    @Test void crashAfterPlayerSaveBeforeChestUpdateCommitsOnlyRemainder() {
+        ChestData c=chest(); ChestDataRepository.save(c);
+        Properties op=TransferSnapshot.encode(c,"PICKUP",player.getUniqueId());
+        op.setProperty("remaining", Base64.getEncoder().encodeToString(ItemBytes.toBytesList(Arrays.asList(new ItemStack(Material.DIAMOND,13)))));
+        store().insert(op);
+        TransferReceipt.apply(player,op.getProperty("id"),()->{
+            player.getInventory().addItem(new ItemStack(Material.DIAMOND,4)); player.giveExp(100);
+        });
+        assertEquals(17,ChestDataRepository.findAll().get(0).getInventory().get(0).getAmount());
+        restartAndResume(); restartAndResume();
+        assertEquals(4,diamonds()); assertEquals(100,player.getTotalExperience());
+        assertEquals(13,ChestDataRepository.findAll().get(0).getInventory().get(0).getAmount());
+        assertEquals(0,ChestDataRepository.findAll().get(0).getXpStored()); assertTrue(store().pending().isEmpty());
     }
     @Test void receiptIsSavedTogetherWithItemsAndXp() {
         String id=UUID.randomUUID().toString();
