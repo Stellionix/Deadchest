@@ -20,7 +20,13 @@ public class BlockBreakListener implements Listener {
                 final ChestData chestData = DeadChestLoader.getChestData(e.getBlock().getLocation());
                 if(chestData != null){
                     e.setCancelled(true);
-                    e.getPlayer().sendMessage(local.prefixed("chest.not-owner"));
+                    // Breaking the block is forbidden even while its owner's asynchronous
+                    // pickup is finishing. Only report an ownership denial for denied access.
+                    if (!ClickListener.canOpenChest(chestData, e.getPlayer(),
+                            e.getPlayer().getUniqueId(),
+                            e.getPlayer().hasPermission(me.crylonz.deadchest.Permission.CHESTPASS.label))) {
+                        e.getPlayer().sendMessage(local.prefixed("chest.not-owner"));
+                    }
                 }
 
 

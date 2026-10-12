@@ -24,6 +24,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.Mockito.*;
 
 class BlockBreakListenerTest {
@@ -72,6 +73,7 @@ class BlockBreakListenerTest {
 
             DeadChestLoader.config = mock(DeadChestConfig.class);
             when(DeadChestLoader.config.getBoolean(ConfigKey.INDESTRUCTIBLE_CHEST)).thenReturn(true);
+            when(DeadChestLoader.config.getBoolean(ConfigKey.ONLY_OWNER_CAN_OPEN_CHEST)).thenReturn(true);
 
             Localization localization = new Localization();
             Map<String, Object> values = new HashMap<>();
@@ -82,6 +84,7 @@ class BlockBreakListenerTest {
 
             ChestData cd = mock(ChestData.class);
             when(cd.getChestLocation()).thenReturn(block.getLocation());
+            when(cd.getPlayerUUID()).thenReturn(java.util.UUID.randomUUID());
             chestData.clearChestData();
             chestData.addChestData(cd);
 
@@ -93,6 +96,23 @@ class BlockBreakListenerTest {
             assertTrue(event.isCancelled(), "Event should be cancelled for indestructible chest");
             assertTrue(player.nextMessage().contains("not your Deadchest"));
         }
+    }
+
+    @Test
+    void ownerBreakingDuringPickupIsProtectedWithoutFalseDenial() {
+        DeadChestLoader.config = mock(DeadChestConfig.class);
+        when(DeadChestLoader.config.getBoolean(ConfigKey.INDESTRUCTIBLE_CHEST)).thenReturn(true);
+        when(DeadChestLoader.config.getBoolean(ConfigKey.ONLY_OWNER_CAN_OPEN_CHEST)).thenReturn(true);
+        ChestData cd = mock(ChestData.class);
+        when(cd.getChestLocation()).thenReturn(block.getLocation());
+        when(cd.getPlayerUUID()).thenReturn(player.getUniqueId());
+        when(cd.isTransitioning()).thenReturn(true);
+        chestData.addChestData(cd);
+        block.setType(Material.CHEST);
+        BlockBreakEvent event = new BlockBreakEvent(block, player);
+        listener.onBlockBreakEvent(event);
+        assertTrue(event.isCancelled());
+        assertNull(player.nextMessage());
     }
 
     @Test
