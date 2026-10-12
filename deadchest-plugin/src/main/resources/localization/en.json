@@ -13,6 +13,8 @@
   "hologram.timer": "§f{0}§7h §f{1}§7m §f{2}§7s left",
   "hologram.loading": "Loading...",
   "chest.not-owner": "§cThis is not your Deadchest!",
+  "chest.partial-recovery": "§6Partial recovery §8• §eYour remaining items are still in the chest. §fFree up space, then click again to collect them.",
+  "chest.inventory-full": "§eInventory full §8• §7No items were collected. §fFree up space, then click the chest again.",
   "chest.infinity": "Infinity chest",
   "chest.time-left": "left",
   "chest.double-block": "§cYou can't put a chest next to a Deadchest",

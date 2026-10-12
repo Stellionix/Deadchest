@@ -13,6 +13,8 @@
   "hologram.timer": "§f{0}§7h §f{1}§7m §f{2}§7s restantes",
   "hologram.loading": "Chargement...",
   "chest.not-owner": "§cCe Deadchest ne vous appartient pas !",
+  "chest.partial-recovery": "§6Récupération partielle §8• §eLe reste de vos objets est toujours dans le coffre. §fLibérez de la place puis cliquez à nouveau pour les récupérer.",
+  "chest.inventory-full": "§eInventaire plein §8• §7Aucun objet n'a été récupéré. §fLibérez de la place puis cliquez à nouveau sur le coffre.",
   "chest.infinity": "Deadchest infini",
   "chest.time-left": "restantes",
   "chest.double-block": "§cVous ne pouvez pas placer un coffre à côté d'un Deadchest",

@@ -81,7 +81,13 @@ public final class PlayerTransfers implements Listener {
                 if (!player.isOnline() || player.isDead()) { unlock(chest, result); return; }
                 InventoryTransfer.Packing packing = InventoryTransfer.partial(player.getInventory().getContents(), chest.getInventory(), true);
                 if (packing.moved == 0 && (packing.hasRemainder() || chest.getXpStored() == 0)) {
+                    if (packing.hasRemainder()) pickupMessage(player, "chest.inventory-full");
                     unlock(chest, result); return;
+                }
+                if (packing.hasRemainder()) {
+                    result.thenAccept(done -> {
+                        if (done) pickupMessage(player, "chest.partial-recovery");
+                    });
                 }
                 operation = TransferSnapshot.encode(chest, "PICKUP", player.getUniqueId());
                 operation.setProperty("remaining", Base64.getEncoder().encodeToString(ItemBytes.toBytesList(packing.remaining)));
@@ -111,6 +117,13 @@ public final class PlayerTransfers implements Listener {
     private void unlock(ChestData chest, CompletableFuture<Boolean> result) {
         DeadChestLoader.getSchedulerAdapter().runAtLocation(chest.getChestLocation(), () -> {
             chest.cancelUnpreparedTransition(); result.complete(false);
+        });
+    }
+
+    private void pickupMessage(Player player, String key) {
+        DeadChestLoader.getSchedulerAdapter().runForEntity(player, () -> {
+            if (player.isOnline() && DeadChestLoader.local != null)
+                player.sendMessage(DeadChestLoader.local.prefixed(key));
         });
     }
     public CompletableFuture<Boolean> restore(ChestData chest, Player player) {
