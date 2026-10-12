@@ -1,6 +1,7 @@
 package me.crylonz.deadchest.listener;
 
 
+import me.crylonz.deadchest.utils.LegacySupport;
 import me.crylonz.deadchest.IgnoreInventoryHolder;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -30,7 +31,7 @@ public class InventoryClickListener implements Listener {
         // first case : removing item from ignore list
         if (clickedInv == event.getInventory()) {
             final ItemStack clicked = event.getCurrentItem();
-            if (clicked == null || me.crylonz.deadchest.utils.LegacySupport.isAir(clicked.getType())) return;
+            if (clicked == null || LegacySupport.isAir(clicked.getType())) return;
 
             getSchedulerAdapter().runForEntity(event.getWhoClicked(), () -> {
                 if (clicked.getAmount() <= 1) {
@@ -48,7 +49,7 @@ public class InventoryClickListener implements Listener {
         // second case : adding item to ignore list
         if (clickedInv == event.getWhoClicked().getInventory()) {
             final ItemStack src = event.getCurrentItem();
-            if (src == null || me.crylonz.deadchest.utils.LegacySupport.isAir(src.getType())) return;
+            if (src == null || LegacySupport.isAir(src.getType())) return;
 
             if (!containsSimilarIgnoreItem(src)) {
                 getSchedulerAdapter().runForEntity(event.getWhoClicked(), () -> {
@@ -67,7 +68,7 @@ public class InventoryClickListener implements Listener {
     }
 
     private boolean containsSimilarIgnoreItem(ItemStack candidate) {
-        if (ignoreList == null || candidate == null || me.crylonz.deadchest.utils.LegacySupport.isAir(candidate.getType())) {
+        if (ignoreList == null || candidate == null || LegacySupport.isAir(candidate.getType())) {
             return false;
         }
 

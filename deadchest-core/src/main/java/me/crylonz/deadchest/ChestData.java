@@ -1,5 +1,6 @@
 package me.crylonz.deadchest;
 
+import me.crylonz.deadchest.utils.LegacySupport;
 import me.crylonz.deadchest.db.ChestDataRepository;
 import org.bukkit.Location;
 import org.bukkit.configuration.serialization.SerializableAs;
@@ -234,7 +235,7 @@ public final class ChestData {
             }
 
             if (shouldForceLoadChunk) {
-                me.crylonz.deadchest.utils.LegacySupport.setForceLoaded(chestLocation.getChunk(), true);
+                LegacySupport.setForceLoaded(chestLocation.getChunk(), true);
             }
 
             Collection<Entity> entities = chestLocation.getWorld().getNearbyEntities(
@@ -256,7 +257,7 @@ public final class ChestData {
 
             if (shouldForceLoadChunk && isChunkForceLoaded()) {
                 chestLocation.getWorld().unloadChunk(chestLocation.getBlockX() >> 4, chestLocation.getBlockZ() >> 4);
-                me.crylonz.deadchest.utils.LegacySupport.setForceLoaded(chestLocation.getChunk(), false);
+                LegacySupport.setForceLoaded(chestLocation.getChunk(), false);
             }
 
             return isEmpty;
@@ -274,7 +275,7 @@ public final class ChestData {
 
     public boolean isChunkForceLoaded() {
         return chestLocation.getWorld() == null ||
-                me.crylonz.deadchest.utils.LegacySupport.isForceLoaded(chestLocation.getWorld(),
+                LegacySupport.isForceLoaded(chestLocation.getWorld(),
                         chestLocation.getBlockX() >> 4,
                         chestLocation.getBlockZ() >> 4
                 );

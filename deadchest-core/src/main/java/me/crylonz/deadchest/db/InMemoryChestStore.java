@@ -1,5 +1,8 @@
 package me.crylonz.deadchest.db;
 
+import me.crylonz.deadchest.ChestLifecycle;
+import me.crylonz.deadchest.PlayerTransfers;
+import me.crylonz.deadchest.RecoveryJournal;
 import me.crylonz.deadchest.ChestData;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -33,9 +36,9 @@ public class InMemoryChestStore {
      * @param chestData chest data to add
      */
     public void addChestData(final ChestData chestData) {
-        if (me.crylonz.deadchest.RecoveryJournal.blocked(chestData.getId())) return;
-        if (me.crylonz.deadchest.PlayerTransfers.blocked(chestData.getId())) chestData.beginCreation();
-        me.crylonz.deadchest.ChestLifecycle.created(chestData);
+        if (RecoveryJournal.blocked(chestData.getId())) return;
+        if (PlayerTransfers.blocked(chestData.getId())) chestData.beginCreation();
+        ChestLifecycle.created(chestData);
         addPlayerData(chestData);
         chestDataMap.put(normalizeLocation(chestData.getChestLocation()), chestData);
 
@@ -49,7 +52,7 @@ public class InMemoryChestStore {
      */
     public void addListOfChestData(final Set<ChestData> chestThatNeedsBeUpdated) {
         chestThatNeedsBeUpdated.forEach((chestData) -> {
-            if (chestData == null || me.crylonz.deadchest.RecoveryJournal.blocked(chestData.getId())) {
+            if (chestData == null || RecoveryJournal.blocked(chestData.getId())) {
                 return;
             }
             Location normalizedLocation = normalizeLocation(chestData.getChestLocation());
@@ -178,8 +181,8 @@ public class InMemoryChestStore {
      * @param chest chest to remove
      */
     public void removeChestData(@Nonnull final ChestData chest) {
-        if (me.crylonz.deadchest.ChestLifecycle.enabled() && !chest.isTransitioning()) {
-            me.crylonz.deadchest.ChestLifecycle.transition(chest, me.crylonz.deadchest.ChestLifecycle.Outcome.DELETED,
+        if (ChestLifecycle.enabled() && !chest.isTransitioning()) {
+            ChestLifecycle.transition(chest, ChestLifecycle.Outcome.DELETED,
                     "system/API", () -> removeChestData(chest));
             return;
         }
@@ -202,7 +205,7 @@ public class InMemoryChestStore {
      * @param chests chest collection to remove
      */
     public void removeChestDataList(@Nonnull final Collection<ChestData> chests) {
-        if (!me.crylonz.deadchest.ChestLifecycle.enabled()) {
+        if (!ChestLifecycle.enabled()) {
             chests.forEach(chestData -> {
                 chestData.removeArmorStand();
                 this.chestDataMap.remove(normalizeLocation(chestData.getChestLocation()));
@@ -218,7 +221,7 @@ public class InMemoryChestStore {
      * Clears all in-memory state and schedules full database cleanup.
      */
     public void clearChestData() {
-        if (!me.crylonz.deadchest.ChestLifecycle.enabled()) {
+        if (!ChestLifecycle.enabled()) {
             chestDataMap.clear(); playerChestLocations.clear(); ChestDataRepository.clearAsync(); return;
         }
         new ArrayList<>(chestDataMap.values()).forEach(this::removeChestData);

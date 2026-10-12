@@ -1,5 +1,6 @@
 package me.crylonz.deadchest.db;
 
+import me.crylonz.deadchest.utils.LegacySupport;
 import me.crylonz.deadchest.utils.ItemBytes;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -91,7 +92,7 @@ public class IgnoreItemListRepository {
              ResultSet result = request.executeQuery()) {
             while (result.next()) {
                 ItemStack item = ItemBytes.fromBytes(result.getBytes("data"));
-                if (item != null && !me.crylonz.deadchest.utils.LegacySupport.isAir(item.getType())) {
+                if (item != null && !LegacySupport.isAir(item.getType())) {
                     items.add(item);
                 }
             }

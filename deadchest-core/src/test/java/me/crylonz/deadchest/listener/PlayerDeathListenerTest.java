@@ -1,5 +1,10 @@
 package me.crylonz.deadchest.listener;
 
+import me.crylonz.deadchest.FileManager;
+import me.crylonz.deadchest.PlayerTransfers;
+import me.crylonz.deadchest.TransferReceipt;
+import me.crylonz.deadchest.db.ChestDataRepository;
+import me.crylonz.deadchest.db.SQLExecutor;
 import be.seeseemelk.mockbukkit.MockBukkit;
 import be.seeseemelk.mockbukkit.ServerMock;
 import be.seeseemelk.mockbukkit.WorldMock;
@@ -74,11 +79,11 @@ class PlayerDeathListenerTest {
 
         // Minimal plugin + statics
         DeadChestLoader.plugin = MockBukkit.createMockPlugin();
-        DeadChestLoader.sqlExecutor = mock(me.crylonz.deadchest.db.SQLExecutor.class);
+        DeadChestLoader.sqlExecutor = mock(SQLExecutor.class);
         DeadChestLoader.log = Logger.getLogger("DeadChestTest");
 
         DeadChestLoader.getChestDataCache().setChestData(new ArrayList<>());
-        DeadChestLoader.fileManager = mock(me.crylonz.deadchest.FileManager.class);
+        DeadChestLoader.fileManager = mock(FileManager.class);
 
         // Localization stub
         DeadChestLoader.local = new Localization();
@@ -148,11 +153,11 @@ class PlayerDeathListenerTest {
     @Test
     void creationPersistsEmptyPlayerBeforePublishingAndWaitsForSql() {
         player.getInventory().setItem(0, new ItemStack(Material.DIAMOND, 23));
-        DeadChestLoader.sqlExecutor = mock(me.crylonz.deadchest.db.SQLExecutor.class);
+        DeadChestLoader.sqlExecutor = mock(SQLExecutor.class);
         doAnswer(call -> {
             assertFalse(player.getInventory().contains(Material.DIAMOND));
             assertTrue(DeadChestLoader.getChestDataCache().isEmpty());
-            assertTrue(player.getScoreboardTags().stream().anyMatch(t -> t.startsWith(me.crylonz.deadchest.TransferReceipt.PREFIX)));
+            assertTrue(player.getScoreboardTags().stream().anyMatch(t -> t.startsWith(TransferReceipt.PREFIX)));
             return null;
         }).when(player).saveData();
         listener.onPlayerDeathEvent(deathEvent());
@@ -160,14 +165,14 @@ class PlayerDeathListenerTest {
         ChestData chest = DeadChestLoader.getChestDataCache().getChestData().get(0);
         assertFalse(chest.claimTransition(), "Cannot recover an uncommitted creation");
         verify(DeadChestLoader.sqlExecutor).runAsync(any(Runnable.class));
-        assertTrue(me.crylonz.deadchest.PlayerTransfers.blocked(chest.getId()));
+        assertTrue(PlayerTransfers.blocked(chest.getId()));
     }
 
     @Test
     void failedPlayerSaveNeverPublishesChest() {
         player.getInventory().setItem(0, new ItemStack(Material.DIAMOND, 23));
         doThrow(new IllegalStateException("disk unavailable")).when(player).saveData();
-        try (MockedStatic<me.crylonz.deadchest.db.ChestDataRepository> repository = mockStatic(me.crylonz.deadchest.db.ChestDataRepository.class)) {
+        try (MockedStatic<ChestDataRepository> repository = mockStatic(ChestDataRepository.class)) {
             assertThrows(IllegalStateException.class, () -> listener.onPlayerDeathEvent(deathEvent()));
             assertTrue(DeadChestLoader.getChestDataCache().isEmpty());
             repository.verifyNoInteractions();

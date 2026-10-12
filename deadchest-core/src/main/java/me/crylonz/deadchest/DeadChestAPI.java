@@ -1,5 +1,6 @@
 package me.crylonz.deadchest;
 
+import me.crylonz.deadchest.commands.GivebackStrategy;
 import me.crylonz.deadchest.db.InMemoryChestStore;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -38,7 +39,7 @@ public class DeadChestAPI {
     public static boolean giveBackChest(Player player, ChestData chest) {
         if (chest == null || PlayerTransfers.blocked(chest.getId())) return false;
         if (ChestLifecycle.enabled()) {
-            return ChestTransfers.giveBack(player, chest, me.crylonz.deadchest.commands.GivebackStrategy.GROUND, "API");
+            return ChestTransfers.giveBack(player, chest, GivebackStrategy.GROUND, "API");
         }
         if (DeadChestLoader.getSchedulerAdapter().isFoliaLikeRuntime()) {
             throw new IllegalStateException("Use giveBackChestAsync on Folia; blocking waits are unsafe");
@@ -64,7 +65,7 @@ public class DeadChestAPI {
         }
 
         if (ChestLifecycle.enabled()) {
-            future.complete(ChestTransfers.giveBack(player, chest, me.crylonz.deadchest.commands.GivebackStrategy.GROUND, "API"));
+            future.complete(ChestTransfers.giveBack(player, chest, GivebackStrategy.GROUND, "API"));
             return future;
         }
         DeadChestLoader.getSchedulerAdapter().executeForEntity(player, () -> {

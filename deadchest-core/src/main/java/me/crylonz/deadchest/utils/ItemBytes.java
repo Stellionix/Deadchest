@@ -22,7 +22,7 @@ public final class ItemBytes {
     private static volatile Method DESERIALIZE_BYTES;    // static method: ItemStack deserializeBytes(byte[])
 
     public static byte[] toBytes(ItemStack item) {
-        if (item == null || me.crylonz.deadchest.utils.LegacySupport.isAir(item.getType())) return new byte[0];
+        if (item == null || LegacySupport.isAir(item.getType())) return new byte[0];
 
         // paper (via réflexion)
         Method m = getSerializeAsBytes();

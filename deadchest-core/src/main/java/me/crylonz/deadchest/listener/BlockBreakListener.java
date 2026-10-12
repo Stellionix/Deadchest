@@ -1,5 +1,6 @@
 package me.crylonz.deadchest.listener;
 
+import me.crylonz.deadchest.Permission;
 import me.crylonz.deadchest.ChestData;
 import me.crylonz.deadchest.DeadChestLoader;
 import me.crylonz.deadchest.utils.ConfigKey;
@@ -24,7 +25,7 @@ public class BlockBreakListener implements Listener {
                     // pickup is finishing. Only report an ownership denial for denied access.
                     if (!ClickListener.canOpenChest(chestData, e.getPlayer(),
                             e.getPlayer().getUniqueId(),
-                            e.getPlayer().hasPermission(me.crylonz.deadchest.Permission.CHESTPASS.label))) {
+                            e.getPlayer().hasPermission(Permission.CHESTPASS.label))) {
                         e.getPlayer().sendMessage(local.prefixed("chest.not-owner"));
                     }
                 }

@@ -1,5 +1,6 @@
 package me.crylonz.deadchest.commands;
 
+import me.crylonz.deadchest.DeadChestLoader;
 import me.crylonz.deadchest.Permission;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
@@ -29,7 +30,7 @@ final class RepairCommands extends DCSubCommandRegistration {
             return;
         }
 
-        me.crylonz.deadchest.DeadChestLoader.getSchedulerAdapter().executeForEntity(player(), () -> {
+        DeadChestLoader.getSchedulerAdapter().executeForEntity(player(), () -> {
             Collection<Entity> entities = player().getWorld().getNearbyEntities(player().getLocation(), 100.0D, 25.0D, 100.0D);
             int holoRemoved = 0;
 

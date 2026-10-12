@@ -1,5 +1,8 @@
 package me.crylonz.deadchest.listener;
 
+import me.crylonz.deadchest.ChestLifecycle;
+import me.crylonz.deadchest.PlayerTransfers;
+import me.crylonz.deadchest.RecoveryJournal;
 import me.crylonz.deadchest.ChestData;
 import me.crylonz.deadchest.DeadChestLoader;
 import me.crylonz.deadchest.DeadchestPickUpEvent;
@@ -142,7 +145,7 @@ public class ClickListener implements Listener {
         }
 
         if (config.getInt(ConfigKey.DROP_MODE) == 1) {
-            me.crylonz.deadchest.PlayerTransfers.active().recover(cd, player).thenAccept(done -> {
+            PlayerTransfers.active().recover(cd, player).thenAccept(done -> {
                 if (!done) return;
                 DeadChestLoader.getSchedulerAdapter().runAtLocation(block.getLocation(), () -> playPickupAnimation(block));
                 DeadChestLoader.getSchedulerAdapter().runForEntity(player, () -> playPickupSound(player.getLocation().getBlock(), player));
@@ -150,9 +153,9 @@ public class ClickListener implements Listener {
             return;
         }
 
-        me.crylonz.deadchest.ChestLifecycle.transitionAsync(cd, me.crylonz.deadchest.ChestLifecycle.Outcome.RECOVERED,
+        ChestLifecycle.transitionAsync(cd, ChestLifecycle.Outcome.RECOVERED,
                 player.getUniqueId().toString(), () -> {
-                    me.crylonz.deadchest.RecoveryJournal.active().begin(cd, "RECOVER", player.getUniqueId());
+                    RecoveryJournal.active().begin(cd, "RECOVER", player.getUniqueId());
                     java.util.concurrent.CompletableFuture<Void> delivered = new java.util.concurrent.CompletableFuture<>();
                     block.setType(Material.AIR);
                     DeadChestLoader.getChestDataCache().removeChestData(cd);

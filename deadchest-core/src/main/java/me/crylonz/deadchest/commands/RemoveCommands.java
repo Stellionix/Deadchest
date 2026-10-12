@@ -1,5 +1,6 @@
 package me.crylonz.deadchest.commands;
 
+import me.crylonz.deadchest.DeadChestManager;
 import me.crylonz.deadchest.ChestData;
 import me.crylonz.deadchest.DeadChestLoader;
 import me.crylonz.deadchest.Permission;
@@ -45,7 +46,7 @@ final class RemoveCommands extends DCSubCommandRegistration {
 
     void registerRemoveAll() {
         registerCommand("dc removeall", Permission.ADMIN.label, () -> {
-            int count = me.crylonz.deadchest.DeadChestManager.cleanAllDeadChests(sender().getName());
+            int count = DeadChestManager.cleanAllDeadChests(sender().getName());
             sender().sendMessage(local.prefixed("commands.operation.deadchests-removed", count));
         });
     }

@@ -1,5 +1,12 @@
 package me.crylonz.deadchest.listener;
 
+import me.crylonz.deadchest.ChestLifecycle;
+import me.crylonz.deadchest.PlayerTransfers;
+import me.crylonz.deadchest.RecoveryJournal;
+import me.crylonz.deadchest.TransferStore;
+import me.crylonz.deadchest.db.ChestDataRepository;
+import me.crylonz.deadchest.db.SQLExecutor;
+import me.crylonz.deadchest.db.SQLite;
 import be.seeseemelk.mockbukkit.MockBukkit;
 import be.seeseemelk.mockbukkit.WorldMock;
 import be.seeseemelk.mockbukkit.block.BlockMock;
@@ -41,23 +48,23 @@ class ClickListenerTest {
     private BlockMock chestBlock;
     private ClickListener listener;
     private InMemoryChestStore deadChest;
-    private org.mockito.MockedStatic<me.crylonz.deadchest.RecoveryJournal> journalMock;
+    private org.mockito.MockedStatic<RecoveryJournal> journalMock;
 
     @BeforeEach
     void setUp() {
         MockBukkit.mock();
         DeadChestLoader.plugin = MockBukkit.createMockPlugin();
-        me.crylonz.deadchest.ChestLifecycle.observe(null);
-        DeadChestLoader.sqlExecutor = mock(me.crylonz.deadchest.db.SQLExecutor.class);
+        ChestLifecycle.observe(null);
+        DeadChestLoader.sqlExecutor = mock(SQLExecutor.class);
         doAnswer(a -> { ((Runnable)a.getArgument(0)).run(); return null; }).when(DeadChestLoader.sqlExecutor).runAsync(any(Runnable.class));
-        DeadChestLoader.db = new me.crylonz.deadchest.db.SQLite(DeadChestLoader.plugin);
+        DeadChestLoader.db = new SQLite(DeadChestLoader.plugin);
         DeadChestLoader.db.init();
-        me.crylonz.deadchest.db.ChestDataRepository.initTable(() -> {});
+        ChestDataRepository.initTable(() -> {});
         clearInvocations(DeadChestLoader.sqlExecutor);
-        me.crylonz.deadchest.PlayerTransfers.initialize();
-        journalMock = mockStatic(me.crylonz.deadchest.RecoveryJournal.class);
-        journalMock.when(me.crylonz.deadchest.RecoveryJournal::active)
-                .thenReturn(mock(me.crylonz.deadchest.RecoveryJournal.class));
+        PlayerTransfers.initialize();
+        journalMock = mockStatic(RecoveryJournal.class);
+        journalMock.when(RecoveryJournal::active)
+                .thenReturn(mock(RecoveryJournal.class));
         world = new WorldMock() { @Override public boolean isChunkForceLoaded(int x,int z) { return false; } };
         MockBukkit.getMock().addWorld(world);
         player = spy(new PlayerMock(MockBukkit.getMock(), "Steve"));
@@ -170,7 +177,7 @@ class ClickListenerTest {
         order.verify(player).saveData();
         order.verify(DeadChestLoader.sqlExecutor).runAsync(any(Runnable.class));
         assertEquals(Material.AIR, chestBlock.getType(), "Chest block should be removed after pickup");
-        assertTrue(new me.crylonz.deadchest.TransferStore(DeadChestLoader.plugin.getDataFolder().toPath().resolve("data.db")).pending().isEmpty());
+        assertTrue(new TransferStore(DeadChestLoader.plugin.getDataFolder().toPath().resolve("data.db")).pending().isEmpty());
     }
 
     @Test

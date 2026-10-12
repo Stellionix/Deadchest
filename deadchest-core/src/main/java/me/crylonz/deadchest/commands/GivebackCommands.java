@@ -1,5 +1,8 @@
 package me.crylonz.deadchest.commands;
 
+import me.crylonz.deadchest.ChestLifecycle;
+import me.crylonz.deadchest.ChestTransfers;
+import me.crylonz.deadchest.PlayerTransfers;
 import me.crylonz.deadchest.ChestData;
 import me.crylonz.deadchest.DeadChestLoader;
 import me.crylonz.deadchest.PendingGivebackRepository;
@@ -280,12 +283,12 @@ final class GivebackCommands extends DCSubCommandRegistration {
     }
 
     private boolean restoreChestToPlayer(Player targetPlayer, ChestData chestData, GivebackStrategy strategy) {
-        if (targetPlayer == null || chestData == null || !targetPlayer.isOnline() || me.crylonz.deadchest.PlayerTransfers.blocked(chestData.getId())) {
+        if (targetPlayer == null || chestData == null || !targetPlayer.isOnline() || PlayerTransfers.blocked(chestData.getId())) {
             return false;
         }
 
-        if (me.crylonz.deadchest.ChestLifecycle.enabled()) {
-            return me.crylonz.deadchest.ChestTransfers.giveBack(targetPlayer, chestData, strategy, sender().getName());
+        if (ChestLifecycle.enabled()) {
+            return ChestTransfers.giveBack(targetPlayer, chestData, strategy, sender().getName());
         }
         DeadChestLoader.getSchedulerAdapter().executeForEntity(targetPlayer, () -> GivebackDelivery.deliver(targetPlayer, chestData, strategy));
         removeGivebackChest(chestData);
@@ -295,19 +298,19 @@ final class GivebackCommands extends DCSubCommandRegistration {
     private int queueForOfflineDelivery(String playerName, List<ChestData> selected, GivebackStrategy strategy) {
         int queued = 0;
         for (ChestData chestData : selected) {
-            if (chestData.getPlayerUUID() == null || me.crylonz.deadchest.PlayerTransfers.blocked(chestData.getId())) {
+            if (chestData.getPlayerUUID() == null || PlayerTransfers.blocked(chestData.getId())) {
                 continue;
             }
-            if (me.crylonz.deadchest.ChestLifecycle.enabled()) {
+            if (ChestLifecycle.enabled()) {
                 String actor = sender().getName();
-                if (me.crylonz.deadchest.ChestLifecycle.transitionAsync(chestData, me.crylonz.deadchest.ChestLifecycle.Outcome.GIVEBACK, actor, () -> {
+                if (ChestLifecycle.transitionAsync(chestData, ChestLifecycle.Outcome.GIVEBACK, actor, () -> {
                     java.util.concurrent.CompletableFuture<Void> done = new java.util.concurrent.CompletableFuture<>();
                     DeadChestLoader.sqlExecutor.runAsync(() -> {
                         try {
                             if (!PendingGivebackRepository.queueChest(chestData.getPlayerUUID(), playerName, chestData, strategy))
                                 throw new IllegalStateException("Pending giveback not persisted");
                             DeadChestLoader.getSchedulerAdapter().runAtLocation(chestData.getChestLocation(), () -> {
-                                me.crylonz.deadchest.ChestTransfers.remove(chestData); done.complete(null);
+                                ChestTransfers.remove(chestData); done.complete(null);
                             });
                         } catch (Exception ex) { done.completeExceptionally(ex); }
                     });

@@ -1,5 +1,6 @@
 package me.crylonz.deadchest.commands;
 
+import me.crylonz.deadchest.IgnoreInventoryHolder;
 import me.crylonz.deadchest.DeadChestLoader;
 import me.crylonz.deadchest.Permission;
 import me.crylonz.deadchest.utils.ConfigKey;
@@ -116,7 +117,7 @@ public class DCCommandRegistrationService extends DCCommandRegistration {
         DeadChestLoader.plugin.reloadConfig();
         plugin.registerConfig();
         local.reloadLanguage(config.getString(ConfigKey.LOCALIZATION_LANGUAGE));
-        ignoreList = Bukkit.createInventory(new me.crylonz.deadchest.IgnoreInventoryHolder(), 36, local.get("gui.ignore-list.title"));
+        ignoreList = Bukkit.createInventory(new IgnoreInventoryHolder(), 36, local.get("gui.ignore-list.title"));
         loadIgnoreIntoInventoryFromConfig(ignoreList);
     }
 

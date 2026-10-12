@@ -1,5 +1,8 @@
 package me.crylonz.deadchest.listener;
 
+import me.crylonz.deadchest.PlayerTransfers;
+import me.crylonz.deadchest.TransferReceipt;
+import me.crylonz.deadchest.utils.LegacySupport;
 import me.crylonz.deadchest.ChestData;
 import me.crylonz.deadchest.DeadChestLoader;
 import me.crylonz.deadchest.Permission;
@@ -49,7 +52,7 @@ public class PlayerDeathListener implements Listener {
         if (playerOrWorldDisallowsGeneration(player)) return;
         if (pvpKeepInventoryCase(event, player)) return;
 
-        if (java.util.Arrays.stream(player.getInventory().getContents()).noneMatch(item -> item != null && !me.crylonz.deadchest.utils.LegacySupport.isAir(item.getType()))) {
+        if (java.util.Arrays.stream(player.getInventory().getContents()).noneMatch(item -> item != null && !LegacySupport.isAir(item.getType()))) {
             generateLog("Player [" + player.getName() + "] died without inventory : No Deadchest generated");
             return;
         }
@@ -94,7 +97,7 @@ public class PlayerDeathListener implements Listener {
         }
 
         // 7) Chest type + holograms
-        me.crylonz.deadchest.PlayerTransfers transfers = me.crylonz.deadchest.PlayerTransfers.active();
+        PlayerTransfers transfers = PlayerTransfers.active();
         if (!transfers.isReady()) {
             event.setKeepInventory(true); event.setKeepLevel(true); event.getDrops().clear(); return;
         }
@@ -108,7 +111,7 @@ public class PlayerDeathListener implements Listener {
 
         // 9) Clean up drops & remove remaining items on player side
         try {
-            me.crylonz.deadchest.TransferReceipt.apply(player, operation.getProperty("id"), () -> {
+            TransferReceipt.apply(player, operation.getProperty("id"), () -> {
                 clearEventDropsAndPlayerInventory(event, player);
                 if (config.getBoolean(ConfigKey.STORE_XP)) {
                     player.setExp(0); player.setLevel(0); player.setTotalExperience(0);
@@ -407,7 +410,7 @@ public class PlayerDeathListener implements Listener {
     }
 
     private boolean isIgnoredItem(ItemStack item) {
-        if (item == null || me.crylonz.deadchest.utils.LegacySupport.isAir(item.getType())) {
+        if (item == null || LegacySupport.isAir(item.getType())) {
             return false;
         }
 

@@ -1,5 +1,6 @@
 package me.crylonz.deadchest.db;
 
+import me.crylonz.deadchest.utils.ItemBytes;
 import be.seeseemelk.mockbukkit.MockBukkit;
 import be.seeseemelk.mockbukkit.ServerMock;
 import be.seeseemelk.mockbukkit.WorldMock;
@@ -349,10 +350,10 @@ class SQLiteRepositoryTest {
         try (Connection conn = DeadChestLoader.db.connection();
              PreparedStatement insert = conn.prepareStatement("INSERT INTO ignore_items(slot, data) VALUES(?, ?)")) {
             insert.setInt(1, 1);
-            insert.setBytes(2, me.crylonz.deadchest.utils.ItemBytes.toBytes(new ItemStack(Material.DIAMOND, 1)));
+            insert.setBytes(2, ItemBytes.toBytes(new ItemStack(Material.DIAMOND, 1)));
             insert.addBatch();
             insert.setInt(1, 99);
-            insert.setBytes(2, me.crylonz.deadchest.utils.ItemBytes.toBytes(new ItemStack(Material.GOLD_INGOT, 1)));
+            insert.setBytes(2, ItemBytes.toBytes(new ItemStack(Material.GOLD_INGOT, 1)));
             insert.addBatch();
             insert.executeBatch();
         }

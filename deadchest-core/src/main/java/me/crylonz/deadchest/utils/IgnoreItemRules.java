@@ -32,11 +32,11 @@ public final class IgnoreItemRules {
         if (rawEntry instanceof String) {
             String normalizedName = ((String) rawEntry).trim().toUpperCase();
             Material material = Material.getMaterial(normalizedName);
-            return material == null || me.crylonz.deadchest.utils.LegacySupport.isAir(material) ? null : normalizedName;
+            return material == null || LegacySupport.isAir(material) ? null : normalizedName;
         }
 
         ItemStack itemStack = asItemStack(rawEntry);
-        if (itemStack == null || me.crylonz.deadchest.utils.LegacySupport.isAir(itemStack.getType())) {
+        if (itemStack == null || LegacySupport.isAir(itemStack.getType())) {
             return null;
         }
 
@@ -46,7 +46,7 @@ public final class IgnoreItemRules {
     }
 
     public static boolean matches(Object entry, ItemStack candidate) {
-        if (candidate == null || me.crylonz.deadchest.utils.LegacySupport.isAir(candidate.getType())) {
+        if (candidate == null || LegacySupport.isAir(candidate.getType())) {
             return false;
         }
 
@@ -55,7 +55,7 @@ public final class IgnoreItemRules {
         }
 
         ItemStack ruleItem = asItemStack(entry);
-        if (ruleItem == null || me.crylonz.deadchest.utils.LegacySupport.isAir(ruleItem.getType())) {
+        if (ruleItem == null || LegacySupport.isAir(ruleItem.getType())) {
             return false;
         }
 
@@ -69,11 +69,11 @@ public final class IgnoreItemRules {
     public static ItemStack toDisplayItem(Object entry) {
         if (entry instanceof String) {
             Material material = Material.getMaterial((String) entry);
-            return material == null || me.crylonz.deadchest.utils.LegacySupport.isAir(material) ? null : new ItemStack(material, 1);
+            return material == null || LegacySupport.isAir(material) ? null : new ItemStack(material, 1);
         }
 
         ItemStack itemStack = asItemStack(entry);
-        if (itemStack == null || me.crylonz.deadchest.utils.LegacySupport.isAir(itemStack.getType())) {
+        if (itemStack == null || LegacySupport.isAir(itemStack.getType())) {
             return null;
         }
 

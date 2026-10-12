@@ -1,5 +1,6 @@
 package me.crylonz.deadchest;
 
+import me.crylonz.deadchest.utils.Utils;
 import me.crylonz.deadchest.db.ChestDataRepository;
 import org.bukkit.*;
 import org.bukkit.entity.Player;
@@ -131,7 +132,7 @@ public final class PlayerTransfers implements Listener {
                                     if (chest.getChestLocation().getBlock().getType()==Material.AIR)
                                         chest.getChestLocation().getBlock().setType(Material.valueOf(operation.getProperty("material","CHEST")));
                                 } else {
-                                    if (me.crylonz.deadchest.utils.Utils.isGraveBlock(chest.getChestLocation().getBlock().getType()))
+                                    if (Utils.isGraveBlock(chest.getChestLocation().getBlock().getType()))
                                         chest.getChestLocation().getBlock().setType(Material.AIR);
                                     chest.removeArmorStand();
                                 }
