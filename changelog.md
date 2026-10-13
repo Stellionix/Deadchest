@@ -1,3 +1,23 @@
+## DeadChest 4.31.1 - 2026-10-13
+
+### Features
+
+- Added partial inventory recovery: each click collects what fits, while the remaining items stay in the DeadChest until another click. Nothing is collected automatically when space becomes available.
+- Stored XP is granted once, on the first successful recovery. Partially recovered chests keep their original expiration time.
+- Added customizable English and French chat messages for partial recovery and full inventories.
+
+### Bugfix
+
+- Added persistent transfer receipts to recover interrupted chest creation and direct inventory pickups after a server crash, preventing duplicate delivery in these paths.
+- Prevented simultaneous pickups and legacy giveback actions from bypassing an inventory transfer already in progress.
+- Fixed incorrect "This is not your Deadchest!" messages when an owner recovers a chest in Creative mode.
+- Improved compatibility with older Bukkit APIs and ensured logs are written to the active plugin's data folder.
+
+### Configuration
+
+- Renamed `chest.recovery-mode: inventory-then-ground` to `inventory`. Existing values are migrated automatically; overflow now stays in the chest instead of being dropped on the ground.
+- The explicit `ground-drop` mode, expiration drop settings and legacy `/dc giveback` delivery strategies are unchanged. Ground drops and legacy giveback operations do not use the new receipt-based recovery.
+
 ## Deadchest 4.31.0 - 2026-09-27
 
 - 
