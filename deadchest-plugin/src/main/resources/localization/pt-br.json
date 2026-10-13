@@ -12,6 +12,8 @@
   "hologram.timer": "§f{0}§7h §f{1}§7m §f{2}§7s restantes",
   "hologram.loading": "Carregando...",
   "chest.not-owner": "§cEste Deadchest não é seu!",
+  "chest.partial-recovery": "§6Recuperação parcial §8• §eOs itens restantes continuam no baú. §fLibere espaço e clique novamente para recuperá-los.",
+  "chest.inventory-full": "§eInventário cheio §8• §7Nenhum item foi recuperado. §fLibere espaço e clique no baú novamente.",
   "chest.infinity": "Baú infinito",
   "chest.time-left": "restantes",
   "chest.double-block": "§cVocê não pode colocar um baú ao lado de um Deadchest",

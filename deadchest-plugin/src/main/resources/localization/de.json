@@ -12,6 +12,8 @@
   "hologram.timer": "§f{0}§7h §f{1}§7m §f{2}§7s verbleibend",
   "hologram.loading": "Lädt...",
   "chest.not-owner": "§cDas ist nicht dein Deadchest!",
+  "chest.partial-recovery": "§6Teilweise abgeholt §8• §eDie übrigen Gegenstände sind noch in der Truhe. §fSchaffe Platz und klicke erneut, um sie abzuholen.",
+  "chest.inventory-full": "§eInventar voll §8• §7Es wurden keine Gegenstände abgeholt. §fSchaffe Platz und klicke erneut auf die Truhe.",
   "chest.infinity": "Unendliche Truhe",
   "chest.time-left": "verbleibend",
   "chest.double-block": "§cDu kannst keine Truhe neben einem Deadchest platzieren",

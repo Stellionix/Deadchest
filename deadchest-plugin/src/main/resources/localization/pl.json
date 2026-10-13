@@ -12,6 +12,8 @@
   "hologram.timer": "§f{0}§7h §f{1}§7m §f{2}§7s pozostało",
   "hologram.loading": "Ładowanie...",
   "chest.not-owner": "§cTo nie jest twój Deadchest!",
+  "chest.partial-recovery": "§6Częściowy odbiór §8• §ePozostałe przedmioty nadal są w skrzyni. §fZwolnij miejsce i kliknij ponownie, aby je odebrać.",
+  "chest.inventory-full": "§ePełny ekwipunek §8• §7Nie odebrano żadnych przedmiotów. §fZwolnij miejsce i ponownie kliknij skrzynię.",
   "chest.infinity": "Nieskończona skrzynia",
   "chest.time-left": "pozostało",
   "chest.double-block": "§cNie możesz postawić skrzyni obok Deadchesta",

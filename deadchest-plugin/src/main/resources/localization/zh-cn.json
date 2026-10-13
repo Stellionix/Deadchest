@@ -12,6 +12,8 @@
   "hologram.timer": "剩余 §f{0}§7小时 §f{1}§7分 §f{2}§7秒",
   "hologram.loading": "加载中...",
   "chest.not-owner": "§c这不是你的死亡箱！",
+  "chest.partial-recovery": "§6已取回部分物品 §8• §e剩余物品仍在箱子中。§f请腾出背包空间，然后再次点击以取回物品。",
+  "chest.inventory-full": "§e背包已满 §8• §7未取回任何物品。§f请腾出背包空间，然后再次点击箱子。",
   "chest.infinity": "无限箱子",
   "chest.time-left": "剩余",
   "chest.double-block": "§c你不能在死亡箱旁边放置箱子",

@@ -4,7 +4,7 @@
 
 - Added partial inventory recovery: each click collects what fits, while the remaining items stay in the DeadChest until another click. Nothing is collected automatically when space becomes available.
 - Stored XP is granted once, on the first successful recovery. Partially recovered chests keep their original expiration time.
-- Added customizable English and French chat messages for partial recovery and full inventories.
+- Added customizable chat messages for partial recovery and full inventories in all eight bundled languages: English, French, German, Spanish, Italian, Polish, Brazilian Portuguese and Simplified Chinese.
 
 ### Bugfix
 

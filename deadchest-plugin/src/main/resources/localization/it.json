@@ -12,6 +12,8 @@
   "hologram.timer": "§f{0}§7h §f{1}§7m §f{2}§7s rimasti",
   "hologram.loading": "Caricamento...",
   "chest.not-owner": "§cQuesto non è il tuo Deadchest!",
+  "chest.partial-recovery": "§6Recupero parziale §8• §eGli oggetti rimanenti sono ancora nella cassa. §fLibera spazio e fai di nuovo clic per recuperarli.",
+  "chest.inventory-full": "§eInventario pieno §8• §7Non è stato recuperato alcun oggetto. §fLibera spazio e fai di nuovo clic sulla cassa.",
   "chest.infinity": "Cassa infinita",
   "chest.time-left": "rimasti",
   "chest.double-block": "§cNon puoi mettere una cassa accanto a un Deadchest",
