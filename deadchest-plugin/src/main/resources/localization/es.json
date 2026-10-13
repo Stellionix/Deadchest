@@ -12,6 +12,8 @@
   "hologram.timer": "§f{0}§7h §f{1}§7m §f{2}§7s restantes",
   "hologram.loading": "Cargando...",
   "chest.not-owner": "§c¡Este Deadchest no es tuyo!",
+  "chest.partial-recovery": "§6Recuperación parcial §8• §eLos objetos restantes siguen en el cofre. §fLibera espacio y vuelve a hacer clic para recogerlos.",
+  "chest.inventory-full": "§eInventario lleno §8• §7No se ha recogido ningún objeto. §fLibera espacio y vuelve a hacer clic en el cofre.",
   "chest.infinity": "Cofre infinito",
   "chest.time-left": "restantes",
   "chest.double-block": "§cNo puedes colocar un cofre junto a un Deadchest",

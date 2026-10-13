@@ -32,4 +32,11 @@ jobs:
         run: chmod +x gradlew
 
       - name: Build and run tests
-        run: ./gradlew build --no-daemon
+        run: ./gradlew build :deadchest-plugin:shadowJar --no-daemon
+
+      - name: Upload distributable plugin
+        uses: actions/upload-artifact@v4
+        with:
+          name: deadchest-distribution
+          path: deadchest-plugin/build/libs/dead-chest-*.jar
+          if-no-files-found: error
