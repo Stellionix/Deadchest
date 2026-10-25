@@ -20,16 +20,21 @@
 [Get Started](installation.md){ .md-button .md-button--primary }
 [Download](download.md){ .md-button }
 [Configuration](configuration.md){ .md-button }
+[⭐ DeadChest Pro](pro/index.md){ .md-button }
 </div>
 
-## DeadChest Pro
+## ⭐ DeadChest Pro
 
 Pro includes the free edition and adds chest menus, content previews, live tracking,
 optional teleportation and an administrator history for restoring eligible expired loot.
 
-[Explore Pro](pro/index.md){ .md-button }
+[Explore Pro](pro/index.md){ .md-button .md-button--primary }
 [Get Pro on BuiltByBit](https://builtbybit.com/resources/deadchest-pro.131511/){ .md-button }
 [Install or upgrade](pro/installation.md){ .md-button }
+
+[![DeadChest Pro menu showing active chests and their location, remaining time, items and XP](assets/images/pro/02-pro-chest-menu.png){ loading=lazy }](pro/player-tools.md)
+
+Browse your active chests in one menu, then preview their contents, track them or teleport back.
 
 ## Community
 

@@ -24,7 +24,7 @@ nav:
       - Customization: customization.md
       - WorldGuard Integration: worldguard.md
       - Troubleshooting: troubleshooting.md
-  - DeadChest Pro:
+  - "⭐ DeadChest Pro":
       - Overview: pro/index.md
       - Installation and Migration: pro/installation.md
       - Chest Menu and Tracking: pro/player-tools.md

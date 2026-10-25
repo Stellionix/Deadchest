@@ -17,6 +17,14 @@ one click takes what fits and leaves the remainder for another click.
 
 Permission: `deadchest.pro.menu`, granted to everyone by default.
 
+![Active chest menu with a death number, date, coordinates, remaining time and item and XP counts](../assets/images/pro/02-pro-chest-menu.png){ loading=lazy }
+
+*Hover over an entry to see its details before selecting it.*
+
+![Read-only chest inventory preview with tracking and teleportation controls](../assets/images/pro/03-pro-inventory-preview.png){ loading=lazy }
+
+*Inspect the stored items and use the controls below them. Teleportation requires its own permission and must be enabled.*
+
 ## Live tracking
 
 ```text
@@ -30,6 +38,10 @@ direction, distance and remaining time. For a chest in another world, it tells
 you which world to visit. `/dc track off` stops the guidance.
 
 Permission: `deadchest.pro.track`, granted to everyone by default.
+
+![Live tracking action bar showing an arrow, distance, world and remaining lifetime](../assets/images/pro/04-pro-tracking.png){ loading=lazy }
+
+*Follow the direction arrow while checking distance and expiry without opening a menu.*
 
 ## Selecting a chest
 

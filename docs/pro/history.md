@@ -12,10 +12,18 @@ entry to inspect its remaining items and XP before deciding whether to return th
 
 ## Return expired contents
 
+![Administrator history showing an expired chest entry for a player](../assets/images/pro/07-pro-admin-history.png){ loading=lazy }
+
+*Review the player's chest events and select an eligible expired entry.*
+
 1. Open the owner's history and select an eligible expired chest.
 2. Inspect the contents in the restoration preview.
 3. Click the explicit confirmation button.
 4. Read the delivery message. Items and XP go to the original owner, not the administrator.
+
+![Restoration preview showing remaining items and the confirmation button for returning them to their owner](../assets/images/pro/08-pro-restore-confirmation.png){ loading=lazy }
+
+*The confirmation identifies the owner and the contents to return. Opening this preview does not deliver anything.*
 
 A full chest UUID can also be supplied to `/dc restore <chest-uuid>` to open
 the confirmation preview directly. It does not bypass eligibility or permission checks.

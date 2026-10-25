@@ -1,4 +1,4 @@
-# DeadChest Pro
+# ⭐ DeadChest Pro
 
 DeadChest Pro includes the free edition's death chests, XP storage, holograms,
 protection settings and partial collection. It adds tools for finding active

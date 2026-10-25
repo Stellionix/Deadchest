@@ -28,6 +28,10 @@ default, but the feature must still be enabled in the configuration.
 Players can use `/dc teleport`, `/dc teleport 2`, or the button in a chest preview.
 Selection follows the same rules as [tracking](player-tools.md#selecting-a-chest).
 
+![Teleport warmup displaying Return to your chest, a countdown and a Stay still instruction](../assets/images/pro/05-pro-teleport-countdown.png){ loading=lazy }
+
+*The countdown tells the player to stay still until teleportation completes. This demonstration uses custom timing; the defaults are listed below.*
+
 ## Countdown and cooldown
 
 The default warmup lasts five seconds. Movement, damage, death, disconnection,
