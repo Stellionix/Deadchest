@@ -2,46 +2,70 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://stellionix.github.io/Deadchest/4.31.1/</loc>
-         <lastmod>2026-10-13</lastmod>
+         <lastmod>2026-10-25</lastmod>
     </url>
     <url>
          <loc>https://stellionix.github.io/Deadchest/4.31.1/api/</loc>
-         <lastmod>2026-10-13</lastmod>
+         <lastmod>2026-10-25</lastmod>
     </url>
     <url>
          <loc>https://stellionix.github.io/Deadchest/4.31.1/commands-and-perms/</loc>
-         <lastmod>2026-10-13</lastmod>
+         <lastmod>2026-10-25</lastmod>
     </url>
     <url>
          <loc>https://stellionix.github.io/Deadchest/4.31.1/configuration/</loc>
-         <lastmod>2026-10-13</lastmod>
+         <lastmod>2026-10-25</lastmod>
     </url>
     <url>
          <loc>https://stellionix.github.io/Deadchest/4.31.1/contribution/</loc>
-         <lastmod>2026-10-13</lastmod>
+         <lastmod>2026-10-25</lastmod>
     </url>
     <url>
          <loc>https://stellionix.github.io/Deadchest/4.31.1/customization/</loc>
-         <lastmod>2026-10-13</lastmod>
+         <lastmod>2026-10-25</lastmod>
     </url>
     <url>
          <loc>https://stellionix.github.io/Deadchest/4.31.1/download/</loc>
-         <lastmod>2026-10-13</lastmod>
+         <lastmod>2026-10-25</lastmod>
     </url>
     <url>
          <loc>https://stellionix.github.io/Deadchest/4.31.1/how-it-works/</loc>
-         <lastmod>2026-10-13</lastmod>
+         <lastmod>2026-10-25</lastmod>
     </url>
     <url>
          <loc>https://stellionix.github.io/Deadchest/4.31.1/installation/</loc>
-         <lastmod>2026-10-13</lastmod>
+         <lastmod>2026-10-25</lastmod>
     </url>
     <url>
          <loc>https://stellionix.github.io/Deadchest/4.31.1/troubleshooting/</loc>
-         <lastmod>2026-10-13</lastmod>
+         <lastmod>2026-10-25</lastmod>
     </url>
     <url>
          <loc>https://stellionix.github.io/Deadchest/4.31.1/worldguard/</loc>
-         <lastmod>2026-10-13</lastmod>
+         <lastmod>2026-10-25</lastmod>
+    </url>
+    <url>
+         <loc>https://stellionix.github.io/Deadchest/4.31.1/pro/</loc>
+         <lastmod>2026-10-25</lastmod>
+    </url>
+    <url>
+         <loc>https://stellionix.github.io/Deadchest/4.31.1/pro/configuration/</loc>
+         <lastmod>2026-10-25</lastmod>
+    </url>
+    <url>
+         <loc>https://stellionix.github.io/Deadchest/4.31.1/pro/history/</loc>
+         <lastmod>2026-10-25</lastmod>
+    </url>
+    <url>
+         <loc>https://stellionix.github.io/Deadchest/4.31.1/pro/installation/</loc>
+         <lastmod>2026-10-25</lastmod>
+    </url>
+    <url>
+         <loc>https://stellionix.github.io/Deadchest/4.31.1/pro/player-tools/</loc>
+         <lastmod>2026-10-25</lastmod>
+    </url>
+    <url>
+         <loc>https://stellionix.github.io/Deadchest/4.31.1/pro/teleportation/</loc>
+         <lastmod>2026-10-25</lastmod>
     </url>
 </urlset>
