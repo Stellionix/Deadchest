@@ -2,6 +2,9 @@
 
 Make sure you have [installed](installation.md) the plugin before editing the configuration.
 
+For Pro's `pro.yml`, languages and feature permissions, see
+[Pro configuration and permissions](pro/configuration.md).
+
 You can edit configuration directly in `config.yml` or in game with `/dc config`.
 
 DeadChest now uses a structured `config.yml` (schema version `2`) since `v5.0.0`.

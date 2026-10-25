@@ -2,6 +2,10 @@
 
 Make sure you have [downloaded](download.md) the plugin first.
 
+!!! info "Installing DeadChest Pro?"
+    Follow the [Pro installation and migration guide](pro/installation.md), including
+    the data migration steps when upgrading from the free edition.
+
 ### Install steps
 
 1. Stop your server.

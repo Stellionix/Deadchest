@@ -22,6 +22,15 @@
 [Configuration](configuration.md){ .md-button }
 </div>
 
+## DeadChest Pro
+
+Pro includes the free edition and adds chest menus, content previews, live tracking,
+optional teleportation and an administrator history for restoring eligible expired loot.
+
+[Explore Pro](pro/index.md){ .md-button }
+[Get Pro on BuiltByBit](https://builtbybit.com/resources/deadchest-pro.131511/){ .md-button }
+[Install or upgrade](pro/installation.md){ .md-button }
+
 ## Community
 
 - [Discord support](https://discord.com/invite/jCsvJxS)

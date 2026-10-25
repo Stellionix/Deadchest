@@ -4,6 +4,9 @@ Make sure you have [installed](installation.md) the plugin before reading this s
 
 This page documents the current `/dc` commands and permission nodes.
 
+For Pro's `/dc menu`, `/dc track`, `/dc teleport`, `/dc history` and `/dc restore`,
+see [Pro commands and permissions](pro/configuration.md#commands-and-permissions).
+
 ### Commands
 
 | Command                 | Permission               | Description                                                                  |
