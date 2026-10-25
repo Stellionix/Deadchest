@@ -3,6 +3,9 @@ site_url: https://stellionix.github.io/Deadchest/
 repo_url: https://github.com/stellionix/Deadchest
 repo_name: stellionix/Deadchest
 
+extra_css:
+  - assets/stylesheets/pro.css
+
 plugins:
   - search
   - stellionix-shared-docs
