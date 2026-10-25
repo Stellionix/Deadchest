@@ -2,7 +2,12 @@
 .md-typeset .pro-overview {
   --pro-line: var(--md-default-fg-color--lightest);
   --pro-panel: var(--md-default-bg-color--light);
+  background: var(--md-default-bg-color);
+  border-radius: 1rem;
+  padding: 0 1rem 1rem;
 }
+.md-typeset .pro-intro,
+.md-typeset .pro-showcase { margin-left: -1rem; margin-right: -1rem; }
 .md-typeset .pro-intro {
   padding: 2rem 2rem 1.6rem;
   border: 1px solid var(--pro-line);
@@ -47,7 +52,7 @@
 }
 .md-typeset .pro-showcase {
   max-width: none;
-  margin: 0 0 2.5rem;
+  margin: 0 -1rem 2.5rem;
   overflow: hidden;
   border: 1px solid var(--pro-line);
   border-top: 0;
